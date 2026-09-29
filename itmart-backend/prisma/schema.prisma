@@ -1,0 +1,279 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// ADMIN / AUTH
+// ---------------------------------------------------------------------------
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+}
+
+model Admin {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         AdminRole @default(ADMIN)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("admins")
+}
+
+// ---------------------------------------------------------------------------
+// CATALOG STRUCTURE
+// ---------------------------------------------------------------------------
+
+model Category {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  nameEn      String   @map("name_en")
+  nameFr      String   @map("name_fr")
+  image       String?
+  parentId    String?  @map("parent_id")
+  parent      Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToSubcategory")
+  products    Product[]
+  attributes  CategoryAttribute[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+// Defines which filterable/spec fields apply to products in a given category
+// e.g. Category "Laptops" -> attributes: RAM, Storage, Screen Size, Processor
+enum AttributeType {
+  TEXT
+  NUMBER
+  SELECT // fixed list of options, good for filter checkboxes
+  BOOLEAN
+  COLOR // renders as a clickable color swatch on the storefront, using hexValue
+}
+
+model CategoryAttribute {
+  id            String        @id @default(uuid())
+  categoryId    String        @map("category_id")
+  category      Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  nameEn        String        @map("name_en")
+  nameFr        String        @map("name_fr")
+  type          AttributeType @default(TEXT)
+  unit          String?       // e.g. "GB", "inch", "mAh"
+  isFilterable  Boolean       @default(true) @map("is_filterable")
+  sortOrder     Int           @default(0) @map("sort_order")
+  values        ProductAttributeValue[]
+
+  @@map("category_attributes")
+}
+
+model Brand {
+  id        String    @id @default(uuid())
+  slug      String    @unique
+  name      String
+  logo      String?
+  products  Product[]
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("brands")
+}
+
+// Groups variants of the same base model together (e.g. "HP EliteBook 840"
+// group containing the 8GB and 16GB RAM configurations as separate products)
+model ProductGroup {
+  id       String    @id @default(uuid())
+  nameEn   String    @map("name_en")
+  nameFr   String    @map("name_fr")
+  products Product[]
+
+  @@map("product_groups")
+}
+
+model Product {
+  id              String   @id @default(uuid())
+  sku             String   @unique
+  slug            String   @unique
+  categoryId      String   @map("category_id")
+  category        Category @relation(fields: [categoryId], references: [id])
+  brandId         String?  @map("brand_id")
+  brand           Brand?   @relation(fields: [brandId], references: [id])
+  groupId         String?  @map("group_id")
+  group           ProductGroup? @relation(fields: [groupId], references: [id])
+
+  nameEn          String   @map("name_en")
+  nameFr          String   @map("name_fr")
+  descriptionEn   String?  @map("description_en") @db.Text
+  descriptionFr   String?  @map("description_fr") @db.Text
+
+  price           Decimal  @db.Decimal(12, 2)
+  costPrice       Decimal? @db.Decimal(12, 2) @map("cost_price") // internal only — never exposed on public endpoints
+  discountPrice   Decimal? @db.Decimal(12, 2) @map("discount_price")
+  stock           Int      @default(0)
+  isBestSeller    Boolean  @default(false) @map("is_best_seller")
+  isActive        Boolean  @default(true) @map("is_active")
+
+  images          ProductImage[]
+  attributeValues ProductAttributeValue[]
+  orderItems      OrderItem[]
+  relatedFrom     RelatedProduct[] @relation("ProductRelations")
+  relatedTo       RelatedProduct[] @relation("RelatedToProduct")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([isBestSeller])
+  @@map("products")
+}
+
+// Admin-curated cross-sells (e.g. a printer linked to its ink, paper,
+// cable) — distinct from the automatic "same category" related products
+// shown further down the product page.
+model RelatedProduct {
+  id               String  @id @default(uuid())
+  productId        String  @map("product_id")
+  product          Product @relation("ProductRelations", fields: [productId], references: [id], onDelete: Cascade)
+  relatedProductId String  @map("related_product_id")
+  relatedProduct   Product @relation("RelatedToProduct", fields: [relatedProductId], references: [id], onDelete: Cascade)
+  sortOrder        Int     @default(0) @map("sort_order")
+
+  @@unique([productId, relatedProductId])
+  @@map("related_products")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  isPrimary Boolean  @default(false) @map("is_primary")
+  sortOrder Int      @default(0) @map("sort_order")
+
+  @@map("product_images")
+}
+
+// Structured key-value spec, e.g. { attribute: RAM, value: "16GB" }
+// Powers both the product detail "characteristics" table and category filters
+model ProductAttributeValue {
+  id          String            @id @default(uuid())
+  productId   String            @map("product_id")
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeId String            @map("attribute_id")
+  attribute   CategoryAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  value       String            // display value — for COLOR attributes, the color's name (e.g. "Orange")
+  hexValue    String?           @map("hex_value") // only set for COLOR attributes — e.g. "#F97316" — used to render the swatch
+
+  @@unique([productId, attributeId])
+  @@index([attributeId, value])
+  @@map("product_attribute_values")
+}
+
+// ---------------------------------------------------------------------------
+// HOMEPAGE HERO BANNERS (admin-managed, shown on the storefront home page)
+// ---------------------------------------------------------------------------
+
+enum BannerPlacement {
+  HERO // the main rotating banner at the top of the homepage
+  DEALS // the promotional tile shown beside the "deals of the day" product row
+  PROMO // standalone event/promo tiles, admin creates and removes freely
+}
+
+model Banner {
+  id          String         @id @default(uuid())
+  image       String
+  placement   BannerPlacement @default(HERO)
+  titleEn     String?  @map("title_en")
+  titleFr     String?  @map("title_fr")
+  subtitleEn  String?  @map("subtitle_en")
+  subtitleFr  String?  @map("subtitle_fr")
+  ctaTextEn   String?  @map("cta_text_en")
+  ctaTextFr   String?  @map("cta_text_fr")
+  ctaLink     String?  @map("cta_link")
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("banners")
+}
+
+// ---------------------------------------------------------------------------
+// NEWSLETTER SUBSCRIBERS (footer signup form on the storefront)
+// ---------------------------------------------------------------------------
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("newsletter_subscribers")
+}
+
+// ---------------------------------------------------------------------------
+// ORDERS (no online payment — customer info collected, WhatsApp + email notify)
+// ---------------------------------------------------------------------------
+
+enum OrderStatus {
+  PENDING
+  CONTACTED
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// ---------------------------------------------------------------------------
+// DELIVERY ZONES (admin-configured shipping fees per city/area)
+// ---------------------------------------------------------------------------
+
+model DeliveryZone {
+  id        String   @id @default(uuid())
+  city      String   @unique
+  fee       Decimal  @db.Decimal(12, 2)
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("delivery_zones")
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  reference     String      @unique // human-friendly order number, e.g. ORD-000123
+  customerName  String      @map("customer_name")
+  phone         String
+  email         String?
+  address       String
+  city          String
+  deliveryFee   Decimal     @default(0) @db.Decimal(12, 2) @map("delivery_fee")
+  notes         String?     @db.Text
+  status        OrderStatus @default(PENDING)
+  total         Decimal     @db.Decimal(12, 2)
+  items         OrderItem[]
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  orderId    String  @map("order_id")
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String  @map("product_id")
+  product    Product @relation(fields: [productId], references: [id])
+  quantity   Int
+  unitPrice  Decimal @db.Decimal(12, 2) @map("unit_price")
+
+  @@map("order_items")
+}

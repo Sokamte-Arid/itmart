@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+  /* Trust / navigation */
+  --color-navy-950: #3b0764;
+  --color-navy-900: #581c87;
+  --color-navy-800: #6b21a8;
+  --color-navy-700: #7e22ce;
+  --color-navy-500: #a855f7;
+
+  /* CTA / discounts / energy */
+  --color-brand-600: #e85a2a;
+  --color-brand-500: #ff6b35;
+  --color-brand-400: #ff8a5c;
+  --color-brand-100: #ffe4d6;
+  --color-brand-50: #fff5f0;
+
+  /* WhatsApp — reserved specifically for the order button */
+  --color-whatsapp: #25d366;
+  --color-whatsapp-dark: #1da851;
+
+  /* Status */
+  --color-success-600: #15803d;
+  --color-success-100: #dcfce7;
+  --color-danger-600: #dc2626;
+  --color-danger-100: #fee2e2;
+
+  --color-surface: #f7f8fa;
+  --color-surface-border: #e6e8ee;
+  --color-sidebar: #eef2f7;
+  --color-ink-900: #161b26;
+  --color-ink-700: #3a4150;
+  --color-ink-500: #6b7280;
+  --color-ink-300: #a6acc4;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink-900);
+  background-color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

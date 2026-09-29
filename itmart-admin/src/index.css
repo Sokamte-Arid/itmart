@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Sidebar / navigation ink */
+  --color-ink-950: #12151f;
+  --color-ink-900: #1e2436;
+  --color-ink-800: #2a3149;
+  --color-ink-700: #3a4262;
+  --color-ink-500: #6b7394;
+  --color-ink-300: #a6acc4;
+
+  /* Primary accent — amber, used sparingly for actions & highlights */
+  --color-accent-600: #d97e0d;
+  --color-accent-500: #f59e0b;
+  --color-accent-400: #fbbf50;
+  --color-accent-100: #fef3dc;
+  --color-accent-50: #fffaf0;
+
+  /* Status colors */
+  --color-success-600: #15803d;
+  --color-success-100: #dcfce7;
+  --color-warning-600: #b45309;
+  --color-warning-100: #fef3c7;
+  --color-danger-600: #dc2626;
+  --color-danger-100: #fee2e2;
+  --color-info-600: #2563eb;
+  --color-info-100: #dbeafe;
+
+  /* Neutral surface */
+  --color-surface: #f7f8fa;
+  --color-surface-border: #e6e8ee;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: var(--color-ink-900);
+}
+
+.font-mono-data {
+  font-family: var(--font-mono);
+}
+
+/* Visible keyboard focus (accessibility) */
+:focus-visible {
+  outline: 2px solid var(--color-accent-500);
+  outline-offset: 2px;
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-ink-300); border-radius: 4px; }

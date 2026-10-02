@@ -32,6 +32,9 @@ export default function ProductVariantSwitcher({ product, colorVariants, descrip
     images: selected.images,
   };
 
+  const shortDescription =
+    pickLang(selected, 'shortDescription', locale) || pickLang(product, 'shortDescription', locale);
+
   return (
     <>
       <ProductGallery images={selected.images} alt={name} />
@@ -42,6 +45,9 @@ export default function ProductVariantSwitcher({ product, colorVariants, descrip
         <p className="text-xs text-ink-400 mb-4">
           {dict.product.sku}: <span className="font-mono">{selected.sku}</span>
         </p>
+
+        {/* Short description (admin: "Description courte"), before the price */}
+        {shortDescription && <p className="text-sm text-ink-700 leading-relaxed -mt-1 mb-4">{shortDescription}</p>}
 
         <div className="flex items-baseline gap-3 mb-2">
           {selected.discountPrice ? (
@@ -96,14 +102,17 @@ export default function ProductVariantSwitcher({ product, colorVariants, descrip
           <div className="mt-6 pt-6 border-t border-surface-border">
             <h2 className="text-sm font-semibold text-ink-900 mb-3">{dict.product.specifications}</h2>
             <dl className="divide-y divide-surface-border text-sm">
-              {product.attributeValues.map((av) => (
+              {/* Same order as set in the admin for the category */}
+              {[...product.attributeValues]
+                .sort((a, b) => (a.attribute?.sortOrder ?? 0) - (b.attribute?.sortOrder ?? 0))
+                .map((av) => (
                 <div key={av.id} className="flex justify-between py-2">
                   <dt className="text-ink-500">
                     {pickLang(av.attribute, 'name', locale)} {av.attribute.unit ? `(${av.attribute.unit})` : ''}
                   </dt>
                   <dd className="text-ink-900 font-medium">{av.value}</dd>
                 </div>
-              ))}
+                ))}
             </dl>
           </div>
         )}

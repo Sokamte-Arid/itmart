@@ -3,7 +3,16 @@ const prisma = require('../config/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { sendLowStockAlertEmail } = require('../utils/mailer');
+const { notifyLowStock } = require('../utils/push');
 const { stripCostPrice, stripCostPriceFromList } = require('../utils/sanitizeProduct');
+
+// Short description: trimmed, empty → null, never longer than the column (200)
+const SHORT_DESCRIPTION_MAX = 200;
+const cleanShort = (value) => {
+  if (value === undefined || value === null) return null;
+  const text = String(value).trim().replace(/\s+/g, ' ');
+  return text ? text.slice(0, SHORT_DESCRIPTION_MAX) : null;
+};
 
 // Auto-generates a readable SKU when the admin leaves the field blank, e.g.
 // "HP EliteBook 840" -> "HPE-4K7X9B". The random suffix makes a collision
@@ -78,6 +87,8 @@ const getProducts = asyncHandler(async (req, res) => {
     where.OR = [
       { nameEn: { contains: q, mode: 'insensitive' } },
       { nameFr: { contains: q, mode: 'insensitive' } },
+      { shortDescriptionEn: { contains: q, mode: 'insensitive' } },
+      { shortDescriptionFr: { contains: q, mode: 'insensitive' } },
       { descriptionEn: { contains: q, mode: 'insensitive' } },
       { descriptionFr: { contains: q, mode: 'insensitive' } },
       { sku: { contains: q, mode: 'insensitive' } },
@@ -175,7 +186,8 @@ const getProductBySlug = asyncHandler(async (req, res) => {
       images: { orderBy: { sortOrder: 'asc' } },
       brand: true,
       category: true,
-      attributeValues: { include: { attribute: true } },
+      // In the order set in the admin (Catégories → characteristics ↑↓)
+      attributeValues: { include: { attribute: true }, orderBy: { attribute: { sortOrder: 'asc' } } },
       relatedFrom: {
         orderBy: { sortOrder: 'asc' },
         include: {
@@ -291,6 +303,8 @@ const createProduct = asyncHandler(async (req, res) => {
     groupName,
     nameEn,
     nameFr,
+    shortDescriptionEn,
+    shortDescriptionFr,
     descriptionEn,
     descriptionFr,
     price,
@@ -328,6 +342,8 @@ const createProduct = asyncHandler(async (req, res) => {
       group: resolvedGroupId ? { connect: { id: resolvedGroupId } } : undefined,
       nameEn,
       nameFr,
+      shortDescriptionEn: cleanShort(shortDescriptionEn),
+      shortDescriptionFr: cleanShort(shortDescriptionFr),
       descriptionEn,
       descriptionFr,
       price,
@@ -361,6 +377,8 @@ const updateProduct = asyncHandler(async (req, res) => {
     groupName,
     nameEn,
     nameFr,
+    shortDescriptionEn,
+    shortDescriptionFr,
     descriptionEn,
     descriptionFr,
     price,
@@ -402,6 +420,8 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   if (nameEn) data.nameEn = nameEn;
   if (nameFr) data.nameFr = nameFr;
+  if (shortDescriptionEn !== undefined) data.shortDescriptionEn = cleanShort(shortDescriptionEn);
+  if (shortDescriptionFr !== undefined) data.shortDescriptionFr = cleanShort(shortDescriptionFr);
   if (descriptionEn !== undefined) data.descriptionEn = descriptionEn;
   if (descriptionFr !== undefined) data.descriptionFr = descriptionFr;
   if (price !== undefined) data.price = price;
@@ -421,6 +441,9 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (before && before.stock > threshold && product.stock <= threshold) {
     sendLowStockAlertEmail(product).catch((err) =>
       console.error('[product] Failed to send low-stock alert email:', err.message)
+    );
+    notifyLowStock(product).catch((err) =>
+      console.error('[product] Failed to send low-stock push notification:', err.message)
     );
   }
 
@@ -489,6 +512,8 @@ const duplicateProduct = asyncHandler(async (req, res) => {
       group: source.groupId ? { connect: { id: source.groupId } } : undefined, // often duplicated specifically to add another variant to the same group
       nameEn: `${source.nameEn} (Copy)`,
       nameFr: `${source.nameFr} (Copie)`,
+      shortDescriptionEn: source.shortDescriptionEn,
+      shortDescriptionFr: source.shortDescriptionFr,
       descriptionEn: source.descriptionEn,
       descriptionFr: source.descriptionFr,
       price: source.price,

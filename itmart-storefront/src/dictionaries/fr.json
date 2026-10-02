@@ -103,16 +103,21 @@
     "deliveryWhere": "Où nous livrons",
     "deliveryHow": "Comment ça marche",
     "deliveryHowText": "Passez votre commande, confirmez avec nous sur WhatsApp, et nous organisons la livraison à votre adresse.",
-    "stayInTouch": "Restons en contact",
-    "newsletterPlaceholder": "Votre adresse e-mail",
-    "newsletterSuccess": "Merci ! Vous êtes inscrit(e).",
     "terms": "Conditions d'utilisation",
     "privacy": "Politique de confidentialité",
-    "returns": "Politique de retour"
+    "returns": "Politique de retour",
+    "cookieSettings": "Gérer les cookies"
   },
   "common": {
     "currency": "FCFA",
     "loading": "Chargement...",
     "seeMore": "Voir plus"
+  },
+  "consent": {
+    "title": "Cookies et mesure d'audience",
+    "text": "Nous utilisons des cookies pour mesurer la fréquentation du site et améliorer nos publicités (Facebook, Google). Vous pouvez accepter ou refuser, et changer d'avis à tout moment en bas de page.",
+    "learnMore": "En savoir plus",
+    "accept": "Accepter",
+    "decline": "Refuser"
   }
 }

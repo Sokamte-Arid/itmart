@@ -9,7 +9,10 @@
     "deliveryZones": "Delivery Zones",
     "admins": "Admin Accounts",
     "orders": "Orders",
-    "logout": "Log out"
+    "logout": "Log out",
+    "menu": "Menu",
+    "home": "Home",
+    "mobileApp": "Mobile app"
   },
   "login": {
     "title": "Admin login",
@@ -119,7 +122,14 @@
     "searchToAddRelated": "Search products to add...",
     "noRelatedYet": "No related products added yet.",
     "duplicate": "Duplicate",
-    "duplicated": "Product duplicated — edit the copy below."
+    "duplicated": "Product duplicated — edit the copy below.",
+    "takePhoto": "Take a photo",
+    "choosePhotos": "Choose photos",
+    "shortDescriptionFr": "Short description (French)",
+    "shortDescriptionEn": "Short description (English)",
+    "shortDescriptionHint": "Shown under the product name, before the price. 1–2 sentences.",
+    "shortDescriptionPlaceholderFr": "Ex. Imprimante 3-en-1 Wi-Fi, idéale pour la maison et le bureau.",
+    "shortDescriptionPlaceholderEn": "E.g. 3-in-1 Wi-Fi printer, ideal for home and office."
   },
   "categories": {
     "title": "Categories",
@@ -137,7 +147,10 @@
     "typeBoolean": "Yes / No",
     "imageHint": "Shown on the storefront's homepage category grid.",
     "typeColor": "Color (swatch)",
-    "typeColorHint": "Shown as a clickable color circle on the storefront — customers pick the color before adding to cart."
+    "typeColorHint": "Shown as a clickable color circle on the storefront — customers pick the color before adding to cart.",
+    "orderHint": "This is the order the characteristics appear in on the product page. Use ↑ ↓ to change it.",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
   },
   "brands": {
     "title": "Brands",
@@ -156,7 +169,7 @@
     "placementDeals": "\"Deals of the day\" tile",
     "placementPromo": "Promo / event tile",
     "image": "Banner image",
-    "imageHint": "Recommended: a wide image (e.g. 1920×823px, 21:9) — the same image is used on both desktop and mobile for a consistent look.",
+    "imageHint": "Main banner: 1500 × 600 px (5:2) if you have side tiles, otherwise 1920 × 640 px (3:1). Other shapes are shown in full, with blurred edges — nothing is cropped.",
     "imageRequired": "A banner image is required.",
     "noTitle": "No title set",
     "subtitleEn": "Subtitle (English)",
@@ -166,7 +179,11 @@
     "ctaLink": "Button link",
     "sortOrder": "Display order",
     "activate": "Activate",
-    "deactivate": "Deactivate"
+    "deactivate": "Deactivate",
+    "placementSide": "Tile to the right of the main banner (GIF allowed)",
+    "imageHintSide": "Side tile: about 600 × 350 px. Animated GIFs are accepted (5 MB max) and stay animated. Up to 2 tiles per side, in display order.",
+    "imageHintTile": "The image is shown in full inside the tile.",
+    "placementSideLeft": "Tile to the left of the main banner (GIF allowed)"
   },
   "deliveryZones": {
     "subtitle": "Set delivery fees per city — shown to customers at checkout",
@@ -224,6 +241,44 @@
     "statusDelivered": "Delivered",
     "statusCancelled": "Cancelled",
     "exportCsv": "Export CSV",
-    "exportFailed": "Failed to export orders."
+    "exportFailed": "Failed to export orders.",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "newOrderToast": "New order received — list updated",
+    "downloadProforma": "Download proforma",
+    "invoiceNumber": "Invoice number",
+    "invoiceFailed": "Could not generate the document. Please try again."
+  },
+  "pwa": {
+    "title": "IT Mart on your phone",
+    "intro": "Install the admin as an app and get an alert on this device for every new order and low stock.",
+    "installTitle": "Install the app",
+    "installed": "Installed on this device",
+    "installButton": "Install IT Mart Admin",
+    "iosHint": "On iPhone: tap the Share button in Safari, then \"Add to Home Screen\".",
+    "installManual": "Open the browser menu (⋮) and choose \"Install app\" or \"Add to Home screen\".",
+    "notifTitle": "Notifications",
+    "notifOn": "Active on this device",
+    "notifOff": "Off on this device",
+    "notifBlocked": "Blocked — allow notifications for this site in your browser settings.",
+    "enable": "Turn on notifications",
+    "disable": "Turn off",
+    "sendTest": "Send a test",
+    "testSent": "Test notification sent",
+    "enabled": "Notifications turned on",
+    "disabled": "Notifications turned off",
+    "iosInstallFirst": "On iPhone, install the app to your Home Screen first, then turn on notifications from the app.",
+    "insecure": "Installing the app and notifications need a secure connection (HTTPS, or localhost on this computer). See the README for testing on a phone.",
+    "bannerTitle": "Get new orders on your phone",
+    "bannerText": "Install the app and turn on notifications.",
+    "bannerAction": "Set up",
+    "dismiss": "Not now",
+    "offline": "You are offline — changes can't be saved until the connection is back.",
+    "errors": {
+      "unsupported": "This browser doesn't support notifications.",
+      "serverNotConfigured": "Notifications aren't configured on the server yet (VAPID keys missing in the backend .env).",
+      "permissionDenied": "Permission refused. Allow notifications for this site in your browser settings.",
+      "generic": "Couldn't turn on notifications. Please try again."
+    }
   }
 }

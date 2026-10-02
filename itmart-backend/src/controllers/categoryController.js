@@ -78,6 +78,11 @@ const addAttribute = asyncHandler(async (req, res) => {
   const { nameEn, nameFr, type, unit, isFilterable, sortOrder } = req.body;
   if (!nameEn || !nameFr) throw new ApiError(400, 'nameEn and nameFr are required.');
 
+  // New characteristics go at the end of the list unless a position is given
+  const last = await prisma.categoryAttribute.aggregate({
+    where: { categoryId: req.params.id },
+    _max: { sortOrder: true },
+  });
   const attribute = await prisma.categoryAttribute.create({
     data: {
       categoryId: req.params.id,
@@ -86,10 +91,38 @@ const addAttribute = asyncHandler(async (req, res) => {
       type: type || 'TEXT',
       unit,
       isFilterable: isFilterable ?? true,
-      sortOrder: sortOrder ?? 0,
+      sortOrder: sortOrder ?? (last._max.sortOrder ?? -1) + 1,
     },
   });
   res.status(201).json({ success: true, data: attribute });
+});
+
+// PUT /api/categories/:id/attributes/order  (admin)
+// body: { attributeIds: [...] } — the category's characteristics in the
+// order they should appear on product pages and in the filters.
+const reorderAttributes = asyncHandler(async (req, res) => {
+  const { attributeIds } = req.body || {};
+  if (!Array.isArray(attributeIds) || attributeIds.length === 0) {
+    throw new ApiError(400, 'attributeIds must be a non-empty array.');
+  }
+  const existing = await prisma.categoryAttribute.findMany({
+    where: { categoryId: req.params.id },
+    select: { id: true },
+  });
+  const ids = new Set(existing.map((a) => a.id));
+  if (attributeIds.length !== ids.size || !attributeIds.every((id) => ids.has(id))) {
+    throw new ApiError(400, "attributeIds must list exactly this category's characteristics.");
+  }
+  await prisma.$transaction(
+    attributeIds.map((id, index) =>
+      prisma.categoryAttribute.update({ where: { id }, data: { sortOrder: index } })
+    )
+  );
+  const attributes = await prisma.categoryAttribute.findMany({
+    where: { categoryId: req.params.id },
+    orderBy: { sortOrder: 'asc' },
+  });
+  res.json({ success: true, data: attributes });
 });
 
 // DELETE /api/categories/attributes/:attributeId  (admin)
@@ -107,4 +140,5 @@ module.exports = {
   deleteCategory,
   addAttribute,
   deleteAttribute,
+  reorderAttributes,
 };

@@ -25,11 +25,13 @@ npm install
 ```
 
 ### 2. Configure the API URL
-The `.env` file already points to the local backend by default:
+The `.env` file uses a relative URL:
 ```
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=/api
 ```
-Change this if your backend runs elsewhere.
+In development, the Vite server forwards `/api` and `/uploads` to the backend on `http://localhost:5000` (see `vite.config.js`; override with `BACKEND_URL=...`). That is what lets the same admin work on your phone. For a production build hosted separately from the API, set the full URL (e.g. `https://api.itmart.cm/api`).
+
+📱 **Phone app & notifications:** see [MOBILE_APP.md](./MOBILE_APP.md).
 
 ### 3. Make sure the backend is running
 This dashboard is a pure frontend — it needs the `itmart-backend` API running (see that project's README) with the database migrated and, ideally, seeded (`npm run seed` in the backend gives you a working admin login: `admin@itmart.cm` / `Admin@12345`).

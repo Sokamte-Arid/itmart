@@ -8,6 +8,7 @@ const {
   getOrderStats,
   exportOrdersCsv,
   getSalesAnalytics,
+  downloadInvoice,
 } = require('../controllers/orderController');
 const { protect } = require('../middleware/auth');
 const { orderLimiter } = require('../middleware/rateLimiter');
@@ -23,6 +24,7 @@ router.get('/stats/summary', protect, getOrderStats);
 router.get('/stats/analytics', protect, getSalesAnalytics);
 router.get('/export', protect, exportOrdersCsv);
 router.get('/', protect, getOrders);
+router.get('/:id/invoice', protect, downloadInvoice);
 router.get('/:id', protect, getOrderById);
 router.put('/:id/status', protect, updateOrderStatus);
 

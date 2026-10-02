@@ -87,18 +87,24 @@ export default function BannerFormModal({ open, onClose, banner, onSaved }) {
         <Field label={t('banners.placement')} required hint={t('banners.placementHint')}>
           <Select value={form.placement} onChange={(e) => setForm({ ...form, placement: e.target.value })}>
             <option value="HERO">{t('banners.placementHero')}</option>
+            <option value="SIDE_LEFT">{t('banners.placementSideLeft')}</option>
+            <option value="SIDE">{t('banners.placementSide')}</option>
             <option value="DEALS">{t('banners.placementDeals')}</option>
             <option value="PROMO">{t('banners.placementPromo')}</option>
           </Select>
         </Field>
 
-        <Field label={t('banners.image')} required={!banner} hint={t('banners.imageHint')}>
+        <Field
+          label={t('banners.image')}
+          required={!banner}
+          hint={t(`banners.imageHint${form.placement.startsWith('SIDE') ? 'Side' : form.placement === 'HERO' ? '' : 'Tile'}`)}
+        >
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="relative aspect-[21/9] rounded-lg border-2 border-dashed border-surface-border hover:border-accent-500 cursor-pointer overflow-hidden bg-surface flex items-center justify-center"
+            className={`relative ${form.placement.startsWith('SIDE') ? 'aspect-[12/7] max-w-xs' : 'aspect-[5/2]'} rounded-lg border-2 border-dashed border-surface-border hover:border-accent-500 cursor-pointer overflow-hidden bg-surface flex items-center justify-center`}
           >
             {preview ? (
-              <img src={preview} alt="" className="w-full h-full object-cover" />
+              <img src={preview} alt="" className="w-full h-full object-contain" />
             ) : (
               <div className="flex flex-col items-center text-ink-400 text-sm gap-1">
                 <Upload size={20} />
@@ -109,7 +115,7 @@ export default function BannerFormModal({ open, onClose, banner, onSaved }) {
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </Field>
 
-        <div className="grid grid-cols-2 gap-x-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
           <Field label={t('common.nameEn')} hint="Banner headline (optional)">
             <Input value={form.titleEn} onChange={(e) => setForm({ ...form, titleEn: e.target.value })} />
           </Field>
@@ -118,7 +124,7 @@ export default function BannerFormModal({ open, onClose, banner, onSaved }) {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
           <Field label={t('banners.subtitleEn')}>
             <Textarea value={form.subtitleEn} onChange={(e) => setForm({ ...form, subtitleEn: e.target.value })} />
           </Field>
@@ -127,7 +133,7 @@ export default function BannerFormModal({ open, onClose, banner, onSaved }) {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
           <Field label={t('banners.ctaTextEn')} hint="e.g. Shop now">
             <Input value={form.ctaTextEn} onChange={(e) => setForm({ ...form, ctaTextEn: e.target.value })} />
           </Field>

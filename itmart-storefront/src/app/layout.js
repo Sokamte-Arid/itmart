@@ -3,6 +3,8 @@ import { CartProvider } from '@/context/CartContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingEmailButton from '@/components/FloatingEmailButton';
+import Analytics from '@/components/Analytics';
+import ScrollReveal from '@/components/ScrollReveal';
 import { getDictionary } from '@/lib/i18n';
 import { getCategories } from '@/lib/api';
 
@@ -43,6 +45,10 @@ export default async function RootLayout({ children }) {
           <Footer dict={t} />
           <FloatingEmailButton label={t.footer.emailUs} />
         </CartProvider>
+        {/* Facebook Pixel / Google tag / Clarity — each only if its ID is set in .env */}
+        <Analytics dict={t} />
+        {/* Sections and product cards fade in as you scroll */}
+        <ScrollReveal />
       </body>
     </html>
   );

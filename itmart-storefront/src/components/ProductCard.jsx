@@ -1,5 +1,6 @@
 'use client';
 
+import { trackAddToCart } from '@/lib/analytics';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Package } from 'lucide-react';
@@ -30,6 +31,7 @@ export default function ProductCard({ product, dict, locale }) {
       },
       1
     );
+    trackAddToCart(product, 1);
   };
 
   const discountPct = product.discountPrice

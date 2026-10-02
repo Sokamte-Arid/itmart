@@ -60,8 +60,9 @@ export default function Header({ dict, locale, categories = [] }) {
   };
 
   return (
+    <>
+    {/* Top bar (logo, search, language, cart): stays pinned at the top */}
     <header className="sticky top-0 z-40 bg-white border-b border-surface-border">
-      {/* Top bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="h-9 w-9 rounded-lg bg-navy-900 flex items-center justify-center text-white">
@@ -147,10 +148,12 @@ export default function Header({ dict, locale, categories = [] }) {
           )}
         </Link>
       </div>
+    </header>
 
-      {/* Category nav */}
-      <nav className="border-t border-surface-border" ref={categoryNavRef}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center flex-wrap gap-1">
+      {/* Categories bar: NOT pinned — it scrolls away with the page as the
+          visitor goes down, leaving only the top bar above. */}
+      <nav className="relative z-30 bg-white border-b border-surface-border" ref={categoryNavRef}>
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 flex items-center gap-1 flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Link
             href="/products"
             className="shrink-0 px-3 py-2.5 text-sm font-medium text-ink-700 hover:text-brand-600 whitespace-nowrap"
@@ -191,7 +194,7 @@ export default function Header({ dict, locale, categories = [] }) {
                 </button>
 
                 {isOpen && (
-                  <div className="absolute left-0 top-full bg-white border border-surface-border rounded-lg shadow-lg py-1.5 min-w-[200px] z-50">
+                  <div className="hidden sm:block absolute left-0 top-full bg-white border border-surface-border rounded-lg shadow-lg py-1.5 min-w-[200px] z-50">
                     <Link
                       href={`/products?category=${cat.slug}`}
                       onClick={() => setOpenCategoryId(null)}
@@ -215,7 +218,7 @@ export default function Header({ dict, locale, categories = [] }) {
               </div>
             );
           })}
-          <div className="ml-auto sm:hidden flex items-center gap-1 shrink-0 py-1.5">
+          <div className="ml-auto sm:hidden flex items-center gap-1 shrink-0 py-1.5 pl-2">
             <button
               onClick={() => switchLang('fr')}
               className={`px-2 py-1 text-xs rounded ${locale === 'fr' ? 'bg-navy-900 text-white' : 'text-ink-500'}`}
@@ -230,7 +233,34 @@ export default function Header({ dict, locale, categories = [] }) {
             </button>
           </div>
         </div>
+
+        {/* Phones: subcategories of the tapped category, under the row */}
+        {(() => {
+          const openCat = categories.find((c) => c.id === openCategoryId && c.children?.length > 0);
+          if (!openCat) return null;
+          return (
+            <div className="sm:hidden border-t border-surface-border bg-surface px-2 py-2 flex flex-wrap gap-1.5">
+              <Link
+                href={`/products?category=${openCat.slug}`}
+                onClick={() => setOpenCategoryId(null)}
+                className="px-3 py-1.5 rounded-full bg-white border border-surface-border text-sm font-medium text-ink-900"
+              >
+                {dict.nav.allInCategory} {pickLang(openCat, 'name', locale)}
+              </Link>
+              {openCat.children.map((child) => (
+                <Link
+                  key={child.id}
+                  href={`/products?category=${child.slug}`}
+                  onClick={() => setOpenCategoryId(null)}
+                  className="px-3 py-1.5 rounded-full bg-white border border-surface-border text-sm text-ink-700"
+                >
+                  {pickLang(child, 'name', locale)}
+                </Link>
+              ))}
+            </div>
+          );
+        })()}
       </nav>
-    </header>
+    </>
   );
 }

@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { LogOut, ChevronDown, Globe, KeyRound, Menu } from 'lucide-react';
+import { LogOut, ChevronDown, Globe, KeyRound, Menu, Smartphone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ChangePasswordModal from './ChangePasswordModal';
+import { syncPushLanguage } from '../../pwa/pwa';
 
-export default function Topbar({ title, subtitle, onMenuClick }) {
+export default function Topbar({ title, subtitle, onMenuClick, onOpenMobileApp }) {
   const { t, i18n } = useTranslation();
   const { admin, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,6 +14,7 @@ export default function Topbar({ title, subtitle, onMenuClick }) {
   const switchLang = (lng) => {
     i18n.changeLanguage(lng);
     localStorage.setItem('itmart_admin_lang', lng);
+    syncPushLanguage(lng); // notifications follow the app language
   };
 
   const initials = admin?.name
@@ -80,6 +82,16 @@ export default function Topbar({ title, subtitle, onMenuClick }) {
                   <p className="text-sm font-medium text-ink-900 truncate">{admin?.name}</p>
                   <p className="text-xs text-ink-500 truncate">{admin?.email}</p>
                 </div>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onOpenMobileApp?.();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ink-700 hover:bg-surface"
+                >
+                  <Smartphone size={15} />
+                  {t('nav.mobileApp')}
+                </button>
                 <button
                   onClick={() => {
                     setMenuOpen(false);

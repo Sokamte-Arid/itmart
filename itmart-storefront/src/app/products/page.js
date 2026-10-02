@@ -1,3 +1,4 @@
+import { TrackSearch } from '@/components/TrackEvent';
 import { getDictionary, pickLang, interpolate } from '@/lib/i18n';
 import { getCategories, getBrands, getCategoryBySlug, getProducts } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
@@ -68,6 +69,7 @@ export default async function ProductsPage({ searchParams }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {sp.q && <TrackSearch query={sp.q} />}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-navy-900">
           {sp.q ? `"${sp.q}"` : selectedCategory ? pickLang(selectedCategory, 'name', locale) : t.nav.allProducts}

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { trackBeginCheckout, trackPurchase } from '@/lib/analytics';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -27,6 +28,14 @@ export default function CheckoutPage() {
       .then(setZones)
       .finally(() => setZonesLoading(false));
   }, []);
+
+  // Report "checkout started" once, when the cart is ready
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current || !cart?.hydrated || cart.items.length === 0) return;
+    checkoutTracked.current = true;
+    trackBeginCheckout(cart.items, cart.subtotal);
+  }, [cart?.hydrated, cart?.items, cart?.subtotal]);
 
   useEffect(() => {
     if (cart?.hydrated && cart.items.length === 0 && !submitting) {
@@ -73,6 +82,13 @@ export default function CheckoutPage() {
         'itmart_last_order',
         JSON.stringify({ reference: res.data.order.reference, whatsappLink: res.data.whatsappLink })
       );
+      // Before clearing the cart, while we still have the items
+      trackPurchase({
+        reference: res.data.order.reference,
+        value: Number(res.data.order.total),
+        deliveryFee: Number(res.data.order.deliveryFee || 0),
+        cartItems: cart.items,
+      });
       cart.clearCart();
       router.push('/order-confirmation');
     } catch (err) {

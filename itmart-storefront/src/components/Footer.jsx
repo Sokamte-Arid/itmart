@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import CookieSettingsLink from './CookieSettingsLink';
 import { Cpu, Phone, Mail, Truck, ShieldCheck, MessageCircle, Wallet, HelpCircle, MapPin, PackageCheck } from 'lucide-react';
 
 const CITIES = ['Yaoundé', 'Douala', 'Bafoussam', 'Bamenda', 'Garoua', 'Maroua'];
@@ -195,6 +196,7 @@ export default function Footer({ dict }) {
             <Link href="/privacy" className="hover:text-white transition-colors">
               {dict.footer.privacy}
             </Link>
+            <CookieSettingsLink label={dict.footer.cookieSettings} className="hover:text-white transition-colors" />
           </div>
         </div>
       </div>

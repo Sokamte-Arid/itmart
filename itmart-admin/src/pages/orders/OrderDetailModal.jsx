@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Download } from 'lucide-react';
 import * as ordersApi from '../../api/orders';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { Select } from '../../components/ui/Field';
 import { useToast } from '../../components/ui/Toast';
+import { Download, Phone, MessageCircle } from 'lucide-react';
+import { telHref, whatsappHref } from '../../utils/contact';
 
 const statusTone = {
   PENDING: 'warning',
@@ -30,18 +31,46 @@ const formatDate = (d) =>
   });
 
 export default function OrderDetailModal({ order, onClose, onUpdated }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const [status, setStatus] = useState(order?.status || 'PENDING');
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [invoiceNumber, setInvoiceNumber] = useState(order?.invoiceNumber || null);
 
   useEffect(() => {
     setStatus(order?.status || 'PENDING');
+    setInvoiceNumber(order?.invoiceNumber || null);
   }, [order]);
 
   if (!order) return null;
 
   const statusKey = (s) => `orders.status${s.charAt(0) + s.slice(1).toLowerCase()}`;
+
+  // Not confirmed yet → proforma. Confirmed/shipped/delivered (or already
+  // invoiced) → invoice. Cancelled and never invoiced → no document.
+  const docType = invoiceNumber
+    ? 'invoice'
+    : ['CONFIRMED', 'SHIPPED', 'DELIVERED'].includes(status)
+      ? 'invoice'
+      : ['PENDING', 'CONTACTED'].includes(status)
+        ? 'proforma'
+        : null;
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const res = await ordersApi.downloadInvoice(order.id, i18n.language === 'en' ? 'en' : 'fr');
+      if (res.type === 'invoice' && res.number && res.number !== invoiceNumber) {
+        setInvoiceNumber(res.number);
+        onUpdated?.();
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || t('orders.invoiceFailed'), 'error');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const handleStatusChange = async (newStatus) => {
     setStatus(newStatus);
@@ -62,8 +91,15 @@ export default function OrderDetailModal({ order, onClose, onUpdated }) {
     <Modal open={!!order} onClose={onClose} title={`${t('orders.orderDetails')} — ${order.reference}`} width="max-w-xl">
       <div className="space-y-5">
         <div className="flex items-center justify-between">
-          <Badge tone={statusTone[status]}>{t(statusKey(status))}</Badge>
-          <span className="text-xs text-ink-500">{formatDate(order.createdAt)}</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <Badge tone={statusTone[status]}>{t(statusKey(status))}</Badge>
+            {invoiceNumber && (
+              <span className="text-xs font-mono-data text-ink-600 truncate" title={t('orders.invoiceNumber')}>
+                {invoiceNumber}
+              </span>
+            )}
+          </div>
+          <span className="text-xs text-ink-500 shrink-0">{formatDate(order.createdAt)}</span>
         </div>
 
         <div>
@@ -79,13 +115,29 @@ export default function OrderDetailModal({ order, onClose, onUpdated }) {
             </p>
             {order.notes && <p className="text-ink-500 italic mt-1">{t('orders.notes')}: {order.notes}</p>}
           </div>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <a
+              href={telHref(order.phone)}
+              className="flex items-center justify-center gap-2 rounded-lg border border-surface-border py-2.5 text-sm font-medium text-ink-800 hover:bg-surface"
+            >
+              <Phone size={16} /> {t('orders.call')}
+            </a>
+            <a
+              href={whatsappHref(order.phone, `${order.reference} — `)}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 rounded-lg bg-success-100 text-success-600 py-2.5 text-sm font-medium hover:brightness-95"
+            >
+              <MessageCircle size={16} /> {t('orders.whatsapp')}
+            </a>
+          </div>
         </div>
 
         <div>
           <h4 className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-2">{t('orders.items')}</h4>
           <div className="border border-surface-border rounded-lg divide-y divide-surface-border">
             {order.items?.map((item) => (
-              <div key={item.id} className="flex items-center justify-between px-3 py-2 text-sm">
+              <div key={item.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                 <div className="min-w-0">
                   <p className="text-ink-900 truncate">{item.product?.nameEn || item.product?.nameFr}</p>
                   <p className="text-ink-500 text-xs">
@@ -118,9 +170,17 @@ export default function OrderDetailModal({ order, onClose, onUpdated }) {
         </div>
 
         <div className="flex justify-between items-center gap-2">
-          <Button variant="secondary" icon={Download} onClick={() => ordersApi.downloadInvoice(order.id, order.reference)}>
-            {t('orders.downloadInvoice')}
-          </Button>
+          {docType ? (
+            <Button variant="secondary" icon={Download} onClick={handleDownload} disabled={downloading || saving}>
+              {downloading
+                ? t('common.loading')
+                : docType === 'proforma'
+                  ? t('orders.downloadProforma')
+                  : t('orders.downloadInvoice')}
+            </Button>
+          ) : (
+            <span />
+          )}
           <Button variant="secondary" onClick={onClose}>
             {t('common.close')}
           </Button>

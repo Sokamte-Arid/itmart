@@ -14,7 +14,7 @@ const content = {
     sections: [
       {
         heading: '1. Données collectées',
-        body: "Lorsque vous passez une commande, nous collectons : votre nom, numéro de téléphone, adresse de livraison, ville, et éventuellement votre e-mail. Si vous vous inscrivez à notre newsletter, nous collectons votre adresse e-mail.",
+        body: "Lorsque vous passez une commande, nous collectons : votre nom, numéro de téléphone, adresse de livraison, ville, et éventuellement votre e-mail.",
       },
       {
         heading: '2. Utilisation des données',
@@ -30,11 +30,15 @@ const content = {
       },
       {
         heading: '5. Vos droits',
-        body: "Vous pouvez à tout moment demander l'accès, la correction ou la suppression de vos données, ou vous désinscrire de notre newsletter, en nous contactant via les coordonnées indiquées en pied de page.",
+        body: "Vous pouvez à tout moment demander l'accès, la correction ou la suppression de vos données en nous contactant via les coordonnées indiquées en pied de page.",
       },
       {
         heading: '6. Sécurité',
         body: "Nous mettons en œuvre des mesures raisonnables pour protéger vos données contre l'accès non autorisé.",
+      },
+      {
+        heading: "7. Cookies et mesure d'audience",
+        body: "Avec votre accord (bannière affichée lors de votre première visite), nous utilisons des outils de mesure et de publicité : Meta Pixel (Facebook/Instagram), Google Analytics et Google Ads, et Microsoft Clarity. Ils nous indiquent les pages consultées, les produits vus, les ajouts au panier et les commandes passées, afin d'améliorer le site et de mesurer l'efficacité de nos publicités. Microsoft Clarity enregistre de façon anonyme la navigation (clics, défilement) et masque le contenu des champs de formulaire. Vous pouvez retirer votre accord à tout moment via le lien « Gérer les cookies » en bas de page.",
       },
     ],
     disclaimer:
@@ -45,7 +49,7 @@ const content = {
     sections: [
       {
         heading: '1. Data we collect',
-        body: 'When you place an order, we collect: your name, phone number, delivery address, city, and optionally your email. If you sign up for our newsletter, we collect your email address.',
+        body: 'When you place an order, we collect: your name, phone number, delivery address, city, and optionally your email.',
       },
       {
         heading: '2. How we use it',
@@ -61,11 +65,15 @@ const content = {
       },
       {
         heading: '5. Your rights',
-        body: 'You can request access to, correction of, or deletion of your data, or unsubscribe from our newsletter, at any time by contacting us using the details in the footer.',
+        body: 'You can request access to, correction of, or deletion of your data at any time by contacting us using the details in the footer.',
       },
       {
         heading: '6. Security',
         body: 'We implement reasonable measures to protect your data against unauthorized access.',
+      },
+      {
+        heading: '7. Cookies & analytics',
+        body: 'With your consent (banner shown on your first visit), we use analytics and advertising tools: Meta Pixel (Facebook/Instagram), Google Analytics and Google Ads, and Microsoft Clarity. They tell us which pages are visited, which products are viewed, added to cart and ordered, so we can improve the site and measure how well our ads work. Microsoft Clarity anonymously records browsing (clicks, scrolling) and masks what is typed into form fields. You can withdraw your consent at any time with the "Cookie settings" link at the bottom of the page.',
       },
     ],
     disclaimer:

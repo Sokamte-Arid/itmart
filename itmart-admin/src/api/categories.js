@@ -35,3 +35,7 @@ export const addAttribute = (categoryId, payload) =>
 
 export const deleteAttribute = (attributeId) =>
   client.delete(`/categories/attributes/${attributeId}`).then((res) => res.data);
+
+// Saves the display order of a category's characteristics
+export const reorderAttributes = (categoryId, attributeIds) =>
+  client.put(`/categories/${categoryId}/attributes/order`, { attributeIds }).then((res) => res.data);

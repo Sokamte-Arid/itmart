@@ -2,7 +2,7 @@ const prisma = require('../config/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
-const VALID_PLACEMENTS = ['HERO', 'DEALS', 'PROMO'];
+const VALID_PLACEMENTS = ['HERO', 'DEALS', 'PROMO', 'SIDE', 'SIDE_LEFT'];
 
 // GET /api/banners?placement=HERO  (public — only active banners, in display order)
 const getBanners = asyncHandler(async (req, res) => {

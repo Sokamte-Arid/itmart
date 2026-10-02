@@ -25,6 +25,8 @@ app.use(
         callback(new Error(`CORS: origin ${origin} is not allowed.`));
       }
     },
+    // Lets the admin read the invoice file name / number from downloads
+    exposedHeaders: ['Content-Disposition', 'X-Invoice-Number', 'X-Invoice-Type'],
   })
 );
 app.use(express.json());

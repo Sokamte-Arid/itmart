@@ -4,7 +4,7 @@ const fs = require('fs');
 const sharp = require('sharp');
 const ApiError = require('../utils/ApiError');
 
-const allowedTypes = ['.jpg', '.jpeg', '.png', '.webp'];
+const allowedTypes = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 const maxSize = Number(process.env.MAX_UPLOAD_SIZE_MB || 5) * 1024 * 1024;
 
 /**
@@ -37,6 +37,19 @@ function createUploader({ subfolder, maxWidth, quality = 80 }) {
   const processOne = async (file) => {
     const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}.webp`;
     const destPath = path.join(uploadDir, filename);
+
+    // Animated GIF / WebP: keep every frame (converted to an animated WebP,
+    // usually much lighter than the GIF). Without { animated: true } only the
+    // first frame would be kept and the animation would be lost.
+    const meta = await sharp(file.buffer, { animated: true }).metadata();
+    if ((meta.pages || 1) > 1) {
+      await sharp(file.buffer, { animated: true })
+        .resize({ width: maxWidth, withoutEnlargement: true })
+        .webp({ quality, effort: 4 })
+        .toFile(destPath);
+      return { ...file, filename, path: destPath };
+    }
+
     await sharp(file.buffer)
       .rotate()
       .resize({ width: maxWidth, withoutEnlargement: true })

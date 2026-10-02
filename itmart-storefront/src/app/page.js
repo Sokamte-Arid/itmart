@@ -69,7 +69,7 @@ export default async function HomePage() {
           {categories.length > 0 && (
             <section className="mb-12">
               <h2 className="text-xl font-bold text-navy-900 mb-6">{t.home.shopByCategory}</h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-6">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-6">
                 {categories.slice(0, 12).map((cat) => (
                   <CategoryCard key={cat.id} category={cat} locale={locale} />
                 ))}

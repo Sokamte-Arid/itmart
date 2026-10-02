@@ -9,15 +9,16 @@ export function ToastProvider({ children }) {
   const showToast = useCallback((message, type = 'success') => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
+    // Errors stay longer: they can be long (e.g. which product is out of stock)
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3500);
+    }, type === 'error' ? 7000 : 3500);
   }, []);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed bottom-5 right-5 z-[100] flex flex-col gap-2">
+      <div className="fixed bottom-24 left-4 right-4 sm:left-auto lg:bottom-5 sm:right-5 z-[100] flex flex-col gap-2">
         {toasts.map((toast) => (
           <div
             key={toast.id}

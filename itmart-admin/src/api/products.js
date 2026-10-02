@@ -1,3 +1,4 @@
+import { prepareImageForUpload } from '../utils/resizeImage';
 import client from './client';
 
 export const getProducts = (params = {}) =>
@@ -33,9 +34,10 @@ export const getRelatedProducts = (id) =>
 export const setRelatedProducts = (id, relatedProductIds) =>
   client.put(`/products/${id}/related`, { relatedProductIds }).then((res) => res.data);
 
-export const uploadProductImages = (id, files) => {
+export const uploadProductImages = async (id, files) => {
+  const prepared = await Promise.all(Array.from(files).map((file) => prepareImageForUpload(file)));
   const formData = new FormData();
-  Array.from(files).forEach((file) => formData.append('images', file));
+  prepared.forEach((file) => formData.append('images', file));
   return client
     .post(`/products/${id}/images`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

@@ -1,5 +1,6 @@
 'use client';
 
+import { trackAddToCart, trackContact } from '@/lib/analytics';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, ShoppingBag, MessageCircle } from 'lucide-react';
@@ -31,6 +32,7 @@ export default function AddToCartPanel({ product, dict, locale }) {
       },
       quantity
     );
+    trackAddToCart(product, quantity);
     router.push('/checkout');
   };
 
@@ -39,6 +41,7 @@ export default function AddToCartPanel({ product, dict, locale }) {
   // rendering, so setting it as a static attribute caused a server/client
   // hydration mismatch (server renders one URL, browser renders another).
   const handleWhatsAppInquiry = () => {
+    trackContact('whatsapp');
     window.open(buildProductInquiryLink(product, name, locale), '_blank', 'noopener,noreferrer');
   };
 

@@ -12,10 +12,11 @@ import {
   BarChart3,
   Truck,
   X,
+  Smartphone,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export default function Sidebar({ mobileOpen, onMobileClose }) {
+export default function Sidebar({ mobileOpen, onMobileClose, onOpenMobileApp }) {
   const { t } = useTranslation();
   const { admin } = useAuth();
 
@@ -55,6 +56,16 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
     </nav>
   );
 
+  const mobileAppButton = (
+    <button
+      onClick={onOpenMobileApp}
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-ink-300 hover:bg-white/5 hover:text-white"
+    >
+      <Smartphone size={18} />
+      {t('nav.mobileApp')}
+    </button>
+  );
+
   return (
     <>
       {/* Desktop sidebar — always visible from the lg breakpoint up */}
@@ -66,7 +77,10 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
           <span className="text-white font-bold text-lg tracking-tight">IT Mart</span>
         </div>
         {navLinks()}
-        <div className="px-5 py-4 border-t border-white/10 text-xs text-ink-500">IT Mart Admin v1.0</div>
+        <div className="px-3 py-3 border-t border-white/10">
+          {mobileAppButton}
+          <p className="px-3 pt-2 text-xs text-ink-500">IT Mart Admin v1.1</p>
+        </div>
       </aside>
 
       {/* Mobile drawer — opened via the hamburger button in Topbar */}
@@ -86,8 +100,9 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
               </button>
             </div>
             {navLinks(onMobileClose)}
-            <div className="px-5 py-4 border-t border-white/10 text-xs text-ink-500 shrink-0">
-              IT Mart Admin v1.0
+            <div className="px-3 py-3 border-t border-white/10 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              {mobileAppButton}
+              <p className="px-3 pt-2 text-xs text-ink-500">IT Mart Admin v1.1</p>
             </div>
           </div>
         </div>

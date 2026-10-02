@@ -52,7 +52,7 @@ export default function DeliveryZoneList() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <p className="text-sm text-ink-500 max-w-lg">{t('deliveryZones.hint')}</p>
         <Button
           icon={Plus}
@@ -67,7 +67,7 @@ export default function DeliveryZoneList() {
 
       <Card padded={false}>
         <div className="overflow-x-auto">
-<table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-surface-border">
               <th className="px-5 py-2.5 font-medium">{t('deliveryZones.city')}</th>

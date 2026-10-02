@@ -29,7 +29,7 @@ export default function Analytics() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div />
         <Select value={days} onChange={(e) => setDays(Number(e.target.value))} className="w-44">
           <option value={7}>{t('analytics.last7Days')}</option>

@@ -10,7 +10,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import BannerFormModal from './BannerFormModal';
 import { useToast } from '../../components/ui/Toast';
 
-const PLACEMENTS = ['HERO', 'DEALS', 'PROMO'];
+const PLACEMENTS = ['HERO', 'SIDE_LEFT', 'SIDE', 'DEALS', 'PROMO'];
 
 export default function BannerList() {
   const { t } = useTranslation();
@@ -52,11 +52,17 @@ export default function BannerList() {
   };
 
   const placementLabel = (p) =>
-    ({ HERO: t('banners.placementHero'), DEALS: t('banners.placementDeals'), PROMO: t('banners.placementPromo') }[p]);
+    ({
+      HERO: t('banners.placementHero'),
+      SIDE_LEFT: t('banners.placementSideLeft'),
+      SIDE: t('banners.placementSide'),
+      DEALS: t('banners.placementDeals'),
+      PROMO: t('banners.placementPromo'),
+    }[p]);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <p className="text-sm text-ink-500 max-w-lg">{t('banners.hint')}</p>
         <Button
           icon={Plus}
@@ -78,9 +84,9 @@ export default function BannerList() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {group.map((banner) => (
                 <Card key={banner.id} padded={false} className="overflow-hidden">
-                  <div className="relative aspect-[21/9] bg-surface">
+                  <div className="relative aspect-[5/2] bg-surface">
                     {banner.image ? (
-                      <img src={`${API_ORIGIN}${banner.image}`} alt="" className="w-full h-full object-cover" />
+                      <img src={`${API_ORIGIN}${banner.image}`} alt="" className="w-full h-full object-contain" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-ink-300">
                         <ImageIcon size={24} />

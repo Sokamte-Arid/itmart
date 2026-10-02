@@ -2,7 +2,13 @@ const prisma = require('../config/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { buildOrderWhatsAppLink } = require('../utils/whatsapp');
-const { sendOrderConfirmationEmail, sendAdminOrderNotificationEmail } = require('../utils/mailer');
+const {
+  sendOrderConfirmationEmail,
+  sendAdminOrderNotificationEmail,
+  sendLowStockAlertEmail,
+} = require('../utils/mailer');
+const { notifyNewOrder, notifyLowStock } = require('../utils/push');
+const { buildInvoicePdf } = require('../utils/invoicePdf');
 const { stripCostPrice, stripCostPriceFromList } = require('../utils/sanitizeProduct');
 
 const generateReference = () => {
@@ -109,6 +115,10 @@ const createOrder = asyncHandler(async (req, res) => {
   sendAdminOrderNotificationEmail(order, itemsForMessage).catch((err) =>
     console.error('[order] Failed to send admin notification email:', err.message)
   );
+  // Instant notification on admins' phones (admin app) — also fire-and-forget
+  notifyNewOrder(order).catch((err) =>
+    console.error('[order] Failed to send admin push notification:', err.message)
+  );
 
   res.status(201).json({
     success: true,
@@ -177,12 +187,101 @@ const getOrderById = asyncHandler(async (req, res) => {
 });
 
 // PUT /api/orders/:id/status  (admin)
+// Stock is taken out of inventory while an order is in one of these statuses
+// (i.e. once the admin has confirmed it with the customer), and given back
+// if the order is cancelled or moved back to pending/contacted.
+const STOCK_HOLDING_STATUSES = ['CONFIRMED', 'SHIPPED', 'DELIVERED'];
+
+// body: { status, lang? }
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
+  const lang = req.body.lang === 'en' ? 'en' : 'fr';
   const valid = ['PENDING', 'CONTACTED', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
   if (!valid.includes(status)) throw new ApiError(400, `status must be one of: ${valid.join(', ')}`);
 
-  const order = await prisma.order.update({ where: { id: req.params.id }, data: { status } });
+  const threshold = Number(process.env.LOW_STOCK_THRESHOLD || 5);
+  const crossedLowStock = [];
+
+  const order = await prisma.$transaction(async (tx) => {
+    const current = await tx.order.findUnique({
+      where: { id: req.params.id },
+      include: { items: { include: { product: true } } },
+    });
+    if (!current) throw new ApiError(404, 'Order not found.');
+
+    const wasHolding = STOCK_HOLDING_STATUSES.includes(current.status);
+    const willHold = STOCK_HOLDING_STATUSES.includes(status);
+    // Only on the transition into "confirmed" — orders confirmed before this
+    // feature existed (stockDeducted = false) are left alone.
+    const deduct = willHold && !wasHolding && !current.stockDeducted;
+    const restore = !willHold && current.stockDeducted;
+
+    if (deduct) {
+      const missing = [];
+      for (const item of current.items) {
+        // Conditional decrement: never lets stock go below zero, even if two
+        // admins confirm orders for the last unit at the same moment.
+        const res = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        });
+        if (res.count === 0) {
+          const fresh = await tx.product.findUnique({ where: { id: item.productId } });
+          missing.push({
+            name: (lang === 'en' ? item.product.nameEn : item.product.nameFr) || item.product.nameEn,
+            requested: item.quantity,
+            available: fresh ? fresh.stock : 0,
+          });
+        } else {
+          const updated = await tx.product.findUnique({ where: { id: item.productId } });
+          // Alert only when this confirmation is what brings it down to the threshold
+          if (updated.stock + item.quantity > threshold && updated.stock <= threshold) crossedLowStock.push(updated);
+        }
+      }
+      if (missing.length > 0) {
+        // Throwing rolls back every decrement made above
+        const list = missing
+          .map((m) =>
+            lang === 'en'
+              ? `${m.name} (ordered ${m.requested}, in stock ${m.available})`
+              : `${m.name} (commandé ${m.requested}, en stock ${m.available})`
+          )
+          .join(' ; ');
+        throw new ApiError(
+          409,
+          lang === 'en'
+            ? `Not enough stock to confirm this order: ${list}. Restock or edit the order first.`
+            : `Stock insuffisant pour confirmer cette commande : ${list}. Réapprovisionnez d'abord.`,
+          missing
+        );
+      }
+    }
+
+    if (restore) {
+      for (const item of current.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+    }
+
+    return tx.order.update({
+      where: { id: current.id },
+      data: { status, ...(deduct ? { stockDeducted: true } : {}), ...(restore ? { stockDeducted: false } : {}) },
+    });
+  });
+
+  // Same alerts as a manual stock edit, sent after the change is saved
+  crossedLowStock.forEach((product) => {
+    sendLowStockAlertEmail(product).catch((err) =>
+      console.error('[order] Failed to send low-stock alert email:', err.message)
+    );
+    notifyLowStock(product).catch((err) =>
+      console.error('[order] Failed to send low-stock push notification:', err.message)
+    );
+  });
+
   res.json({ success: true, data: order });
 });
 
@@ -325,7 +424,106 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// ADMIN — invoice / proforma PDF
+// ---------------------------------------------------------------------------
+
+// Orders not confirmed yet get a proforma; confirmed ones get a real invoice.
+const PROFORMA_STATUSES = ['PENDING', 'CONTACTED'];
+const INVOICE_STATUSES = ['CONFIRMED', 'SHIPPED', 'DELIVERED'];
+
+/**
+ * Gives the order its invoice number the first time an invoice is issued:
+ * FAC-<year>-0001, 0002... with no gaps or duplicates. Once set it never
+ * changes, so downloading the invoice again gives the exact same document.
+ */
+async function ensureInvoiceNumber(order) {
+  if (order.invoiceNumber) return order;
+
+  const year = new Date().getFullYear();
+  const prefix = `FAC-${year}-`;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const existing = await prisma.order.findMany({
+      where: { invoiceNumber: { startsWith: prefix } },
+      select: { invoiceNumber: true },
+    });
+    const last = existing.reduce((max, o) => Math.max(max, Number(o.invoiceNumber.slice(prefix.length)) || 0), 0);
+    const invoiceNumber = `${prefix}${String(last + 1).padStart(4, '0')}`;
+
+    try {
+      // `invoiceNumber: null` in the filter: if another request numbered this
+      // order a moment ago, we don't overwrite it.
+      await prisma.order.updateMany({
+        where: { id: order.id, invoiceNumber: null },
+        data: { invoiceNumber, invoicedAt: new Date() },
+      });
+      return prisma.order.findUnique({
+        where: { id: order.id },
+        include: { items: { include: { product: true } } },
+      });
+    } catch (err) {
+      // Two orders got the same number at the same instant — try the next one
+      if (err.code === 'P2002') continue;
+      throw err;
+    }
+  }
+  throw new ApiError(500, 'Could not assign an invoice number, please try again.');
+}
+
+// GET /api/orders/:id/invoice?lang=fr|en  (admin)
+const downloadInvoice = asyncHandler(async (req, res) => {
+  const lang = req.query.lang === 'en' ? 'en' : 'fr';
+  let order = await prisma.order.findUnique({
+    where: { id: req.params.id },
+    include: { items: { include: { product: true } } },
+  });
+  if (!order) throw new ApiError(404, 'Order not found.');
+
+  let type;
+  let number;
+  let issuedAt;
+
+  if (order.invoiceNumber) {
+    // Already invoiced: always the same invoice, even if the status changed since
+    type = 'invoice';
+  } else if (INVOICE_STATUSES.includes(order.status)) {
+    order = await ensureInvoiceNumber(order);
+    type = 'invoice';
+  } else if (PROFORMA_STATUSES.includes(order.status)) {
+    type = 'proforma';
+  } else {
+    throw new ApiError(
+      400,
+      lang === 'fr'
+        ? "Impossible d'établir une facture pour une commande annulée."
+        : 'An invoice cannot be issued for a cancelled order.'
+    );
+  }
+
+  if (type === 'invoice') {
+    number = order.invoiceNumber;
+    issuedAt = order.invoicedAt;
+  } else {
+    number = `PRO-${order.reference.replace(/^ORD-/, '')}`;
+    issuedAt = new Date();
+  }
+
+  const pdf = await buildInvoicePdf(order, { type, number, issuedAt, lang });
+  const filename = `${type === 'invoice' ? (lang === 'fr' ? 'facture' : 'invoice') : 'proforma'}-${number}.pdf`;
+
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename="${filename}"`,
+    'Content-Length': pdf.length,
+    'X-Invoice-Number': number,
+    'X-Invoice-Type': type,
+  });
+  res.send(pdf);
+});
+
 module.exports = {
+  downloadInvoice,
   createOrder,
   trackOrder,
   getOrders,

@@ -8,6 +8,7 @@ const {
   deleteCategory,
   addAttribute,
   deleteAttribute,
+  reorderAttributes,
 } = require('../controllers/categoryController');
 const { protect } = require('../middleware/auth');
 const { categoryUploader } = require('../middleware/upload');
@@ -30,6 +31,7 @@ router.put(
 );
 router.delete('/:id', protect, deleteCategory);
 router.post('/:id/attributes', protect, addAttribute);
+router.put('/:id/attributes/order', protect, reorderAttributes);
 router.delete('/attributes/:attributeId', protect, deleteAttribute);
 
 module.exports = router;

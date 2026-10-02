@@ -69,7 +69,7 @@ export default function ProductList() {
     <div>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
         <div className="flex gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
+          <div className="relative flex-1 min-w-0 sm:flex-none sm:w-64">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
             <Input
               value={q}
@@ -78,7 +78,7 @@ export default function ProductList() {
               className="pl-9"
             />
           </div>
-          <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-44">
+          <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-32 shrink-0 sm:w-44">
             <option value="">{t('common.category')}: All</option>
             {categories.map((c) => (
               <option key={c.id} value={c.slug}>
@@ -87,14 +87,82 @@ export default function ProductList() {
             ))}
           </Select>
         </div>
-        <Button icon={Plus} onClick={() => navigate('/products/new')}>
+        <Button icon={Plus} onClick={() => navigate('/products/new')} className="w-full sm:w-auto">
           {t('products.addProduct')}
         </Button>
       </div>
 
-      <Card padded={false}>
-        <div className="overflow-x-auto">
-<table className="w-full text-sm">
+      {/* Phones: one card per product — tap to edit */}
+      <div className="md:hidden bg-white rounded-xl border border-surface-border divide-y divide-surface-border">
+        {products.map((p) => {
+          const primaryImage = p.images?.find((i) => i.isPrimary) || p.images?.[0];
+          return (
+            <div key={p.id} className="flex items-center gap-3 px-3 py-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/products/${p.id}`)}
+                className="flex items-center gap-3 min-w-0 flex-1 text-left"
+              >
+                {primaryImage ? (
+                  <img
+                    src={`${API_ORIGIN}${primaryImage.url}`}
+                    alt=""
+                    className="h-14 w-14 shrink-0 rounded-lg object-cover border border-surface-border"
+                  />
+                ) : (
+                  <div className="h-14 w-14 shrink-0 rounded-lg bg-surface border border-surface-border flex items-center justify-center text-ink-300">
+                    <ImageOff size={18} />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink-900 truncate">{p.nameEn}</p>
+                  <p className="text-sm font-mono-data mt-0.5">
+                    {p.discountPrice ? (
+                      <>
+                        <span className="text-danger-600 font-semibold">{formatFCFA(p.discountPrice)}</span>{' '}
+                        <span className="text-ink-400 line-through text-xs">{formatFCFA(p.price)}</span>
+                      </>
+                    ) : (
+                      <span className="text-ink-800">{formatFCFA(p.price)}</span>
+                    )}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-1 text-xs">
+                    <span className={p.stock === 0 ? 'text-danger-600 font-medium' : 'text-ink-500'}>
+                      {t('common.stock')}: {p.stock}
+                    </span>
+                    {!p.isActive && <Badge tone="neutral">{t('products.inactive')}</Badge>}
+                    {p.isBestSeller && <Badge tone="accent">{t('products.bestSeller')}</Badge>}
+                  </div>
+                </div>
+              </button>
+              <div className="flex flex-col gap-1 shrink-0">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={Copy}
+                  title={t('products.duplicate')}
+                  aria-label={t('products.duplicate')}
+                  onClick={() => handleDuplicate(p)}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={Trash2}
+                  className="text-danger-600 hover:bg-danger-100/50"
+                  aria-label={t('common.delete')}
+                  onClick={() => setDeleteTarget(p)}
+                />
+              </div>
+            </div>
+          );
+        })}
+        {loading && products.length === 0 && <p className="py-10 text-center text-ink-500">{t('common.loading')}</p>}
+        {!loading && products.length === 0 && <p className="py-10 text-center text-ink-500">{t('common.noResults')}</p>}
+      </div>
+
+      {/* Tablets & desktop: table */}
+      <Card padded={false} className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-surface-border">
               <th className="px-5 py-2.5 font-medium">{t('products.title')}</th>
@@ -187,7 +255,6 @@ export default function ProductList() {
             )}
           </tbody>
         </table>
-        </div>
       </Card>
 
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />

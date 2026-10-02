@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Upload, Star, Trash2, ImageOff } from 'lucide-react';
+import { ArrowLeft, Upload, Star, Trash2, ImageOff, Camera } from 'lucide-react';
 import * as productsApi from '../../api/products';
 import * as categoriesApi from '../../api/categories';
 import * as brandsApi from '../../api/brands';
@@ -19,6 +19,8 @@ const emptyForm = {
   groupName: '',
   nameEn: '',
   nameFr: '',
+  shortDescriptionEn: '',
+  shortDescriptionFr: '',
   descriptionEn: '',
   descriptionFr: '',
   price: '',
@@ -77,6 +79,8 @@ export default function ProductForm() {
         groupName: p.group?.nameEn || '',
         nameEn: p.nameEn,
         nameFr: p.nameFr,
+        shortDescriptionEn: p.shortDescriptionEn || '',
+        shortDescriptionFr: p.shortDescriptionFr || '',
         descriptionEn: p.descriptionEn || '',
         descriptionFr: p.descriptionFr || '',
         price: String(p.price),
@@ -208,11 +212,11 @@ export default function ProductForm() {
         <ArrowLeft size={15} /> {t('common.back')}
       </button>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <form id="product-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <h2 className="font-semibold text-ink-900 mb-4">{t('products.title')}</h2>
-            <div className="grid grid-cols-2 gap-x-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
               <Field label={t('common.nameEn')} required>
                 <Input required value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} />
               </Field>
@@ -220,7 +224,34 @@ export default function ProductForm() {
                 <Input required value={form.nameFr} onChange={(e) => setForm({ ...form, nameFr: e.target.value })} />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-x-4">
+            {/* Short description: shown under the name on the product page */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+              <Field
+                label={t('products.shortDescriptionFr')}
+                hint={`${t('products.shortDescriptionHint')} ${form.shortDescriptionFr.length}/200`}
+              >
+                <Textarea
+                  rows={2}
+                  maxLength={200}
+                  value={form.shortDescriptionFr}
+                  onChange={(e) => setForm({ ...form, shortDescriptionFr: e.target.value })}
+                  placeholder={t('products.shortDescriptionPlaceholderFr')}
+                />
+              </Field>
+              <Field
+                label={t('products.shortDescriptionEn')}
+                hint={`${t('products.shortDescriptionHint')} ${form.shortDescriptionEn.length}/200`}
+              >
+                <Textarea
+                  rows={2}
+                  maxLength={200}
+                  value={form.shortDescriptionEn}
+                  onChange={(e) => setForm({ ...form, shortDescriptionEn: e.target.value })}
+                  placeholder={t('products.shortDescriptionPlaceholderEn')}
+                />
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
               <Field label={t('common.descriptionEn')}>
                 <Textarea value={form.descriptionEn} onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })} />
               </Field>
@@ -233,7 +264,7 @@ export default function ProductForm() {
           {selectedCategory?.attributes?.length > 0 && (
             <Card>
               <h2 className="font-semibold text-ink-900 mb-4">{t('products.specifications')}</h2>
-              <div className="grid grid-cols-2 gap-x-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
                 {selectedCategory.attributes.map((attr) => {
                   if (attr.type === 'COLOR') {
                     const current = attributeValues[attr.id] || { value: '', hexValue: '#000000' };
@@ -296,20 +327,22 @@ export default function ProductForm() {
                       img.isPrimary ? 'border-accent-500' : 'border-surface-border'
                     }`}
                   />
-                  <div className="absolute inset-0 bg-ink-950/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-1.5">
+                  <div className="absolute inset-0 bg-ink-950/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-1.5 pointer-coarse:opacity-100 pointer-coarse:bg-transparent pointer-coarse:items-end pointer-coarse:pb-1">
                     <button
                       type="button"
                       onClick={() => handleSetPrimary(img.id)}
-                      className="p-1.5 bg-white rounded-md hover:bg-accent-100"
+                      className="p-1.5 bg-white rounded-md hover:bg-accent-100 shadow-sm"
                       title={t('products.setPrimary')}
+                      aria-label={t('products.setPrimary')}
                     >
                       <Star size={14} className={img.isPrimary ? 'fill-accent-500 text-accent-500' : 'text-ink-700'} />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteImage(img.id)}
-                      className="p-1.5 bg-white rounded-md hover:bg-danger-100"
+                      className="p-1.5 bg-white rounded-md hover:bg-danger-100 shadow-sm"
                       title={t('common.delete')}
+                      aria-label={t('common.delete')}
                     >
                       <Trash2 size={14} className="text-danger-600" />
                     </button>
@@ -327,15 +360,40 @@ export default function ProductForm() {
                 </div>
               )}
             </div>
-            <label
-              className={`flex items-center justify-center gap-2 border-2 border-dashed border-surface-border rounded-lg py-4 text-sm text-ink-500 cursor-pointer hover:border-accent-500 hover:text-accent-600 transition-colors ${
-                !productId ? 'opacity-50 pointer-events-none' : ''
-              }`}
-            >
-              <Upload size={16} />
-              {uploading ? t('common.loading') : t('products.dragImages')}
-              <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={!productId} />
-            </label>
+            <div className={`flex flex-col sm:flex-row gap-2 ${!productId ? 'opacity-50 pointer-events-none' : ''}`}>
+              {/* Phones: open the camera directly to photograph the product */}
+              <label className="pointer-fine:hidden flex-1 flex items-center justify-center gap-2 rounded-lg py-3.5 text-sm font-semibold bg-accent-500 text-ink-950 cursor-pointer active:bg-accent-600">
+                <Camera size={18} />
+                {uploading ? t('common.loading') : t('products.takePhoto')}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={!productId || uploading}
+                />
+              </label>
+              <label className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-surface-border rounded-lg py-4 text-sm text-ink-500 cursor-pointer hover:border-accent-500 hover:text-accent-600 transition-colors">
+                <Upload size={16} />
+                {uploading ? (
+                  t('common.loading')
+                ) : (
+                  <>
+                    <span className="pointer-coarse:hidden">{t('products.dragImages')}</span>
+                    <span className="pointer-fine:hidden">{t('products.choosePhotos')}</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={!productId || uploading}
+                />
+              </label>
+            </div>
           </Card>
 
           <Card>
@@ -355,7 +413,7 @@ export default function ProductForm() {
             <Field label={t('common.sku')} hint={!isEdit ? t('products.skuHint') : undefined}>
               <Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} disabled={isEdit} placeholder={!isEdit ? t('products.skuPlaceholder') : ''} />
             </Field>
-            <div className="grid grid-cols-2 gap-x-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
               <Field label={t('common.price')} required>
                 <Input
                   type="number"
@@ -476,11 +534,19 @@ export default function ProductForm() {
             </Field>
           </Card>
 
-          <Button type="submit" className="w-full" disabled={saving}>
+          <Button type="submit" className="w-full hidden lg:inline-flex" disabled={saving}>
             {saving ? t('common.loading') : t('common.saveChanges')}
           </Button>
         </div>
       </form>
+
+      {/* Phones: Save button always within thumb reach, above the tab bar */}
+      <div className="h-16 lg:hidden" aria-hidden="true" />
+      <div className="lg:hidden fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-20 px-4 py-2.5 bg-white/95 backdrop-blur border-t border-surface-border">
+        <Button type="submit" form="product-form" size="lg" className="w-full" disabled={saving}>
+          {saving ? t('common.loading') : t('common.saveChanges')}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShoppingBag, Clock, Wallet, Package, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import AppSetupBanner from '../components/pwa/AppSetupBanner';
 import { getOrderStats, getOrders } from '../api/orders';
 import { getLowStockProducts } from '../api/products';
 import { API_ORIGIN } from '../api/client';
@@ -41,7 +42,9 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <AppSetupBanner />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <StatCard
           label={t('dashboard.totalOrders')}
           value={loading ? '—' : stats?.totalOrders ?? 0}
@@ -112,7 +115,7 @@ export default function Dashboard() {
           </Link>
         </div>
         <div className="overflow-x-auto">
-<table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-surface-border">
               <th className="px-5 py-2.5 font-medium">{t('orders.reference')}</th>

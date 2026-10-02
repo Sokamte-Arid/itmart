@@ -6,6 +6,7 @@ import { formatFCFA } from '@/lib/utils';
 import ProductVariantSwitcher from '@/components/ProductVariantSwitcher';
 import ProductCard from '@/components/ProductCard';
 import ShopSidebarLayout from '@/components/ShopSidebarLayout';
+import { TrackViewItem } from '@/components/TrackEvent';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -18,6 +19,8 @@ export async function generateMetadata({ params }) {
   return {
     title: product.nameEn,
     description:
+      product.shortDescriptionFr ||
+      product.shortDescriptionEn ||
       product.descriptionEn ||
       `${product.nameEn} — ${formatFCFA(price)}. Available at IT Mart, delivered across Cameroon.`,
     openGraph: {
@@ -46,8 +49,21 @@ export default async function ProductDetailPage({ params }) {
   const name = pickLang(product, 'name', locale);
   const description = pickLang(product, 'description', locale);
 
+  // Only what the tracking tools need — keeps the page payload small
+  const trackedProduct = {
+    id: product.id,
+    sku: product.sku,
+    nameFr: product.nameFr,
+    nameEn: product.nameEn,
+    price: Number(product.price),
+    discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
+    category: product.category ? { nameFr: product.category.nameFr, nameEn: product.category.nameEn } : null,
+    brand: product.brand ? { name: product.brand.name } : null,
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <TrackViewItem product={trackedProduct} />
       <nav className="text-xs text-ink-500 mb-6 flex items-center gap-1.5">
         <Link href="/" className="hover:text-brand-600">
           {t.nav.home}

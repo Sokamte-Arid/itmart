@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import * as authApi from '../api/auth';
+import { disablePush } from '../pwa/pwa';
 
 const AuthContext = createContext(null);
 
@@ -23,7 +24,10 @@ export function AuthProvider({ children }) {
         setAdmin(res.data);
         localStorage.setItem('itmart_admin_profile', JSON.stringify(res.data));
       })
-      .catch(() => {
+      .catch((err) => {
+        // No connection (e.g. opening the phone app offline): keep the admin
+        // signed in with the saved profile. Only a real 401 means logged out.
+        if (!err.response) return;
         localStorage.removeItem('itmart_admin_token');
         localStorage.removeItem('itmart_admin_profile');
         setAdmin(null);
@@ -39,7 +43,10 @@ export function AuthProvider({ children }) {
     return res.data.admin;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Stop notifications on this device first (needs the token), so a
+    // shared/handed-over phone doesn't keep receiving order alerts.
+    await disablePush().catch(() => {});
     localStorage.removeItem('itmart_admin_token');
     localStorage.removeItem('itmart_admin_profile');
     setAdmin(null);

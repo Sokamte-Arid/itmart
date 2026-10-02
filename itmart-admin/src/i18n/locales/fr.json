@@ -9,7 +9,10 @@
     "deliveryZones": "Zones de livraison",
     "admins": "Comptes admin",
     "orders": "Commandes",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "menu": "Menu",
+    "home": "Accueil",
+    "mobileApp": "Application mobile"
   },
   "login": {
     "title": "Connexion administrateur",
@@ -119,7 +122,14 @@
     "searchToAddRelated": "Rechercher des produits à ajouter...",
     "noRelatedYet": "Aucun produit associé pour l'instant.",
     "duplicate": "Dupliquer",
-    "duplicated": "Produit dupliqué — modifiez la copie ci-dessous."
+    "duplicated": "Produit dupliqué — modifiez la copie ci-dessous.",
+    "takePhoto": "Prendre une photo",
+    "choosePhotos": "Choisir des photos",
+    "shortDescriptionFr": "Description courte (Français)",
+    "shortDescriptionEn": "Description courte (Anglais)",
+    "shortDescriptionHint": "Affichée sous le nom du produit, avant le prix. 1 à 2 phrases.",
+    "shortDescriptionPlaceholderFr": "Ex. Imprimante 3-en-1 Wi-Fi, idéale pour la maison et le bureau.",
+    "shortDescriptionPlaceholderEn": "E.g. 3-in-1 Wi-Fi printer, ideal for home and office."
   },
   "categories": {
     "title": "Catégories",
@@ -137,7 +147,10 @@
     "typeBoolean": "Oui / Non",
     "imageHint": "Affichée dans la grille des catégories sur la page d'accueil.",
     "typeColor": "Couleur (nuancier)",
-    "typeColorHint": "Affichée comme un cercle de couleur cliquable sur le site — les clients choisissent la couleur avant d'ajouter au panier."
+    "typeColorHint": "Affichée comme un cercle de couleur cliquable sur le site — les clients choisissent la couleur avant d'ajouter au panier.",
+    "orderHint": "L'ordre ci-dessous est celui des caractéristiques sur la page produit. Utilisez ↑ ↓ pour le changer.",
+    "moveUp": "Monter",
+    "moveDown": "Descendre"
   },
   "brands": {
     "title": "Marques",
@@ -156,7 +169,7 @@
     "placementDeals": "Tuile \"Offres du jour\"",
     "placementPromo": "Tuile promo / événement",
     "image": "Image de la bannière",
-    "imageHint": "Recommandé : une image large (ex. 1920×823px, format 21:9) — la même image est utilisée sur ordinateur et mobile pour une apparence cohérente.",
+    "imageHint": "Bannière principale : 1500 × 600 px (format 5:2) si vous avez des tuiles à côté, sinon 1920 × 640 px (3:1). Les autres formats sont affichés en entier, avec des bords flous — rien n'est coupé.",
     "imageRequired": "Une image de bannière est requise.",
     "noTitle": "Aucun titre défini",
     "subtitleEn": "Sous-titre (Anglais)",
@@ -166,7 +179,11 @@
     "ctaLink": "Lien du bouton",
     "sortOrder": "Ordre d'affichage",
     "activate": "Activer",
-    "deactivate": "Désactiver"
+    "deactivate": "Désactiver",
+    "placementSide": "Tuile à droite de la bannière principale (GIF possible)",
+    "imageHintSide": "Tuile latérale : 600 × 350 px environ. Les GIF animés sont acceptés (5 Mo max) et restent animés. 2 tuiles maximum de chaque côté, dans l'ordre d'affichage.",
+    "imageHintTile": "Image affichée en entier dans la tuile.",
+    "placementSideLeft": "Tuile à gauche de la bannière principale (GIF possible)"
   },
   "deliveryZones": {
     "subtitle": "Définissez les frais de livraison par ville — affichés au client lors de la commande",
@@ -224,6 +241,44 @@
     "statusDelivered": "Livré",
     "statusCancelled": "Annulé",
     "exportCsv": "Exporter en CSV",
-    "exportFailed": "Échec de l'exportation des commandes."
+    "exportFailed": "Échec de l'exportation des commandes.",
+    "call": "Appeler",
+    "whatsapp": "WhatsApp",
+    "newOrderToast": "Nouvelle commande reçue — liste mise à jour",
+    "downloadProforma": "Télécharger la proforma",
+    "invoiceNumber": "Numéro de facture",
+    "invoiceFailed": "Impossible de générer le document. Réessayez."
+  },
+  "pwa": {
+    "title": "IT Mart sur votre téléphone",
+    "intro": "Installez l'admin comme une application et recevez une alerte sur cet appareil à chaque nouvelle commande et en cas de stock faible.",
+    "installTitle": "Installer l'application",
+    "installed": "Installée sur cet appareil",
+    "installButton": "Installer IT Mart Admin",
+    "iosHint": "Sur iPhone : touchez le bouton Partager dans Safari, puis « Sur l'écran d'accueil ».",
+    "installManual": "Ouvrez le menu du navigateur (⋮) et choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ».",
+    "notifTitle": "Notifications",
+    "notifOn": "Activées sur cet appareil",
+    "notifOff": "Désactivées sur cet appareil",
+    "notifBlocked": "Bloquées — autorisez les notifications pour ce site dans les réglages du navigateur.",
+    "enable": "Activer les notifications",
+    "disable": "Désactiver",
+    "sendTest": "Envoyer un test",
+    "testSent": "Notification de test envoyée",
+    "enabled": "Notifications activées",
+    "disabled": "Notifications désactivées",
+    "iosInstallFirst": "Sur iPhone, installez d'abord l'application sur l'écran d'accueil, puis activez les notifications depuis l'application.",
+    "insecure": "L'installation et les notifications nécessitent une connexion sécurisée (HTTPS, ou localhost sur cet ordinateur). Voir le README pour tester sur un téléphone.",
+    "bannerTitle": "Recevez les nouvelles commandes sur votre téléphone",
+    "bannerText": "Installez l'application et activez les notifications.",
+    "bannerAction": "Configurer",
+    "dismiss": "Plus tard",
+    "offline": "Vous êtes hors ligne — les modifications ne peuvent pas être enregistrées tant que la connexion n'est pas revenue.",
+    "errors": {
+      "unsupported": "Ce navigateur ne prend pas en charge les notifications.",
+      "serverNotConfigured": "Les notifications ne sont pas encore configurées sur le serveur (clés VAPID manquantes dans le .env du backend).",
+      "permissionDenied": "Autorisation refusée. Autorisez les notifications pour ce site dans les réglages du navigateur.",
+      "generic": "Impossible d'activer les notifications. Réessayez."
+    }
   }
 }

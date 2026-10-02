@@ -42,7 +42,7 @@ export default function BrandList() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div />
         <Button
           icon={Plus}

@@ -24,6 +24,12 @@ const errorHandler = (err, req, res, next) => {
 
   if (process.env.NODE_ENV === 'development') {
     console.error(err);
+  } else if (statusCode >= 500) {
+    // Online: keep the technical details in the server log only, and show
+    // visitors a plain message (raw errors can reveal how the system works).
+    console.error(`[error] ${req.method} ${req.originalUrl}:`, err);
+    message = 'Une erreur est survenue. Veuillez réessayer. / Something went wrong, please try again.';
+    details = undefined;
   }
 
   res.status(statusCode).json({

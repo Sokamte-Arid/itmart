@@ -1,0 +1,3 @@
+# IT Mart admin — private, not for search engines
+User-agent: *
+Disallow: /

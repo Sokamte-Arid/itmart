@@ -1,12 +1,17 @@
+# Dependencies & build output (re-created with npm install / npm run build)
 node_modules/
 .next/
 dist/
-build/
-out/
-.medusa/
-coverage/
+
+# Secrets — NEVER on GitHub. Only the *.example templates are shared.
 .env
 .env.*
 !.env.example
+!.env.production.example
+
+# Uploaded product images, banners, logos (back them up separately)
+itmart-backend/uploads/
+
 *.log
 .DS_Store
+Thumbs.db

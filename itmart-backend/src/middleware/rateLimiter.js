@@ -4,8 +4,8 @@ const rateLimit = require('express-rate-limit');
 // accidentally (double-clicks) or deliberately (scripted abuse). Real
 // customers placing one order will never come close to this limit.
 const orderLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 order submissions per IP per window
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 7, // 7 order submissions per visitor (IP address) per window
   standardHeaders: true,
   legacyHeaders: false,
   message: {

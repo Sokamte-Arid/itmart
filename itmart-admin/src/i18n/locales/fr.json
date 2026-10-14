@@ -13,7 +13,7 @@
     "menu": "Menu",
     "home": "Accueil",
     "mobileApp": "Application mobile",
-    "settings": "Suivi & publicité",
+    "settings": "Paramètres",
     "branding": "Identité visuelle",
     "store": "Boutique & contact"
   },
@@ -357,7 +357,9 @@
       "purpose": "Cartes de chaleur et enregistrements des visites : voyez où les visiteurs cliquent et défilent.",
       "where": "Votre projet → Paramètres → Vue d'ensemble → ID du projet.",
       "invalid": "L'ID Clarity contient des lettres minuscules et des chiffres (ex. k2x9abc1de)."
-    }
+    },
+    "hubSubtitle": "Coordonnées, identité visuelle et suivi de votre boutique",
+    "tabTracking": "Suivi & publicité"
   },
   "branding": {
     "subtitle": "Logo et couleurs de votre boutique",
@@ -389,7 +391,17 @@
     "previewProduct": "Produit",
     "previewBuy": "Acheter",
     "previewNote": "Livraison partout au Cameroun",
-    "previewFooter": "© Votre boutique"
+    "previewFooter": "© Votre boutique",
+    "background": "Couleur de fond",
+    "backgroundHint": "Fond des pages de la boutique. Choisissez une couleur claire : le texte est foncé.",
+    "backgroundTooDark": "Couleur trop foncée : le texte de la boutique ne serait plus lisible. Choisissez une couleur claire (blanc, crème, gris clair…).",
+    "bg": {
+      "white": "Blanc",
+      "cream": "Crème",
+      "ivory": "Ivoire",
+      "pearl": "Gris perle",
+      "tint": "Teinte de la marque"
+    }
   },
   "store": {
     "subtitle": "WhatsApp, contacts, réseaux sociaux, factures",

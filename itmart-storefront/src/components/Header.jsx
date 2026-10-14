@@ -63,7 +63,7 @@ export default function Header({ dict, locale, categories = [], logoUrl = null }
   return (
     <>
     {/* Top bar (logo, search, language, cart): stays pinned at the top */}
-    <header className="sticky top-0 z-40 bg-white border-b border-surface-border">
+    <header className="sticky top-0 z-40 bg-[var(--page-bg,#fff)] border-b border-surface-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
         <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="IT Mart">
           {logoUrl ? (
@@ -165,7 +165,7 @@ export default function Header({ dict, locale, categories = [], logoUrl = null }
 
       {/* Categories bar: NOT pinned — it scrolls away with the page as the
           visitor goes down, leaving only the top bar above. */}
-      <nav className="relative z-30 bg-white border-b border-surface-border" ref={categoryNavRef}>
+      <nav className="relative z-30 bg-[var(--page-bg,#fff)] border-b border-surface-border" ref={categoryNavRef}>
         <div className="max-w-7xl mx-auto px-2 sm:px-6 flex items-center gap-1 flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Link
             href="/products"

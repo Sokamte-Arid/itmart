@@ -24,6 +24,7 @@ const darken = (hex, amount) => mix(hex, '#000000', amount);
 export function brandingCss(branding) {
   const primary = HEX.test(branding?.primaryColor || '') ? branding.primaryColor : null;
   const dark = HEX.test(branding?.darkColor || '') ? branding.darkColor : null;
+  const background = HEX.test(branding?.backgroundColor || '') ? branding.backgroundColor : '#FFFFFF';
   if (!primary && !dark) return '';
 
   const vars = {};
@@ -44,10 +45,21 @@ export function brandingCss(branding) {
     vars['--color-navy-500'] = lighten(dark, 0.42);
     vars['--color-navy-300'] = lighten(dark, 0.68);
     vars['--color-navy-100'] = lighten(dark, 0.88);
+
+    // Light greys (filter panel, search bar, image backgrounds, borders):
+    // the page background with a hint of the dark colour, so the whole page
+    // carries the brand instead of a fixed blue-grey.
+    vars['--color-surface'] = mix(background, dark, 0.04);
+    vars['--color-sidebar'] = mix(background, dark, 0.075);
+    vars['--color-surface-border'] = mix(background, dark, 0.13);
   }
-  return `:root{${Object.entries(vars)
+  // Page background (header, category bar and page body)
+  vars['--page-bg'] = background;
+
+  const root = `:root{${Object.entries(vars)
     .map(([k, v]) => `${k}:${v}`)
     .join(';')}}`;
+  return `${root}html body{background-color:${background}}`;
 }
 
 /** Only logo/icon paths written by our own backend are used. */

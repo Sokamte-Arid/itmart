@@ -13,7 +13,7 @@
     "menu": "Menu",
     "home": "Home",
     "mobileApp": "Mobile app",
-    "settings": "Tracking & ads",
+    "settings": "Settings",
     "branding": "Branding",
     "store": "Shop & contact"
   },
@@ -357,7 +357,9 @@
       "purpose": "Heatmaps and recordings of visits: see where visitors click and scroll.",
       "where": "Your project → Settings → Overview → Project ID.",
       "invalid": "The Clarity ID contains lowercase letters and digits (e.g. k2x9abc1de)."
-    }
+    },
+    "hubSubtitle": "Your shop's details, branding and tracking",
+    "tabTracking": "Tracking & ads"
   },
   "branding": {
     "subtitle": "Your shop's logo and colours",
@@ -389,7 +391,17 @@
     "previewProduct": "Product",
     "previewBuy": "Buy",
     "previewNote": "Delivery across Cameroon",
-    "previewFooter": "© Your shop"
+    "previewFooter": "© Your shop",
+    "background": "Background colour",
+    "backgroundHint": "Background of the shop's pages. Pick a light colour: the text is dark.",
+    "backgroundTooDark": "Colour too dark: the shop's text would no longer be readable. Pick a light colour (white, cream, light grey…).",
+    "bg": {
+      "white": "White",
+      "cream": "Cream",
+      "ivory": "Ivory",
+      "pearl": "Pearl grey",
+      "tint": "Brand tint"
+    }
   },
   "store": {
     "subtitle": "WhatsApp, contacts, social media, invoices",

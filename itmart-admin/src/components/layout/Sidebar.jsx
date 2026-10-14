@@ -14,8 +14,6 @@ import {
   X,
   Smartphone,
   Settings,
-  Palette,
-  Store,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -36,11 +34,7 @@ export default function Sidebar({ mobileOpen, onMobileClose, onOpenMobileApp }) 
     ...(admin?.role === 'SUPER_ADMIN'
       ? [
           { to: '/admins', label: t('nav.admins'), icon: Users },
-          // WhatsApp number, contact, social links, invoice details
-          { to: '/store', label: t('nav.store'), icon: Store },
-          // Logo and colours of the shop
-          { to: '/branding', label: t('nav.branding'), icon: Palette },
-          // Tracking tools (Facebook Pixel, Google, Clarity)
+          // Shop & contact, branding, tracking (one page with tabs)
           { to: '/settings', label: t('nav.settings'), icon: Settings },
         ]
       : []),

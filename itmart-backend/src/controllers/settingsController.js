@@ -4,7 +4,7 @@ const ApiError = require('../utils/ApiError');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
-const { readBranding, saveBranding, HEX } = require('../utils/branding');
+const { readBranding, saveBranding, HEX, isLight } = require('../utils/branding');
 const { readStore, readStoreRaw, saveStore, validateStore, publicStore, envDefaults } = require('../utils/storeSettings');
 
 // ---------------------------------------------------------------------------
@@ -130,18 +130,26 @@ const getBrandingSettings = asyncHandler(async (req, res) => {
 });
 
 // PUT /api/settings/branding  (super admin)
-// body: { primaryColor, darkColor, removeLogo?, removeIcon?, lang? }
+// body: { primaryColor, darkColor, backgroundColor, removeLogo?, removeIcon?, lang? }
 const updateBrandingSettings = asyncHandler(async (req, res) => {
   const lang = req.body.lang === 'en' ? 'en' : 'fr';
   const current = await readBranding();
   const next = { ...current };
 
-  for (const field of ['primaryColor', 'darkColor']) {
+  for (const field of ['primaryColor', 'darkColor', 'backgroundColor']) {
     if (req.body[field] === undefined) continue;
     if (!HEX.test(String(req.body[field]))) {
       throw new ApiError(
         400,
         lang === 'en' ? 'Colours must be in the #RRGGBB format (e.g. #FF6B35).' : 'Les couleurs doivent être au format #RRGGBB (ex. #FF6B35).'
+      );
+    }
+    if (field === 'backgroundColor' && !isLight(String(req.body[field]))) {
+      throw new ApiError(
+        400,
+        lang === 'en'
+          ? 'The background colour must be light (white, cream, light grey…) so the text stays readable.'
+          : 'La couleur de fond doit être claire (blanc, crème, gris clair…) pour que le texte reste lisible.'
       );
     }
     next[field] = String(req.body[field]).toUpperCase();

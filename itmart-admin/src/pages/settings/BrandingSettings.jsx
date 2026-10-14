@@ -9,7 +9,7 @@ import { Input } from '../../components/ui/Field';
 import { useToast } from '../../components/ui/Toast';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
-const DEFAULTS = { primaryColor: '#FF6B35', darkColor: '#1E2436' };
+const DEFAULTS = { primaryColor: '#FF6B35', darkColor: '#1E2436', backgroundColor: '#FFFFFF' };
 
 // Ready-made pairs (main colour + dark colour) to start from
 const PRESETS = [
@@ -138,7 +138,11 @@ export default function BrandingSettings() {
       .getBranding()
       .then((res) => {
         setBranding(res.data);
-        setColors({ primaryColor: res.data.primaryColor, darkColor: res.data.darkColor });
+        setColors({
+          primaryColor: res.data.primaryColor,
+          darkColor: res.data.darkColor,
+          backgroundColor: res.data.backgroundColor || '#FFFFFF',
+        });
       })
       .catch(() => showToast(t('settings.loadError'), 'error'));
   }, [showToast, t]);
@@ -167,7 +171,11 @@ export default function BrandingSettings() {
     try {
       const res = await settingsApi.updateBranding({ ...payload, lang });
       setBranding(res.data);
-      setColors({ primaryColor: res.data.primaryColor, darkColor: res.data.darkColor });
+      setColors({
+          primaryColor: res.data.primaryColor,
+          darkColor: res.data.darkColor,
+          backgroundColor: res.data.backgroundColor || '#FFFFFF',
+        });
       showToast(t('branding.saved'));
     } catch (err) {
       showToast(err.response?.data?.message || 'Error', 'error');
@@ -176,14 +184,27 @@ export default function BrandingSettings() {
     }
   };
 
-  const { primaryColor: p, darkColor: d } = colors;
-  const dirty = p !== branding.primaryColor || d !== branding.darkColor;
+  const { primaryColor: p, darkColor: d, backgroundColor: bg } = colors;
+  const dirty =
+    p !== branding.primaryColor || d !== branding.darkColor || bg !== (branding.backgroundColor || '#FFFFFF');
+  // The page text is dark: the background must stay light (same rule as the server)
+  const bgTooDark = luminance(bg) < 0.7;
+  // Quick background choices; the last one is a hint of the dark colour
+  const backgroundChoices = [
+    { key: 'white', hex: '#FFFFFF' },
+    { key: 'cream', hex: '#FBF7F0' },
+    { key: 'ivory', hex: '#FFFDF5' },
+    { key: 'pearl', hex: '#F5F6F8' },
+    { key: 'tint', hex: mix('#FFFFFF', d, 0.035).toUpperCase() },
+  ];
   const buttonContrast = contrast(p, '#FFFFFF');
   const titleContrast = contrast(d, '#FFFFFF');
   const shade = {
     p50: mix(p, '#FFFFFF', 0.94),
     p600: mix(p, '#000000', 0.12),
     d950: mix(d, '#000000', 0.35),
+    surface: mix(bg, d, 0.04),
+    border: mix(bg, d, 0.13),
   };
   const logo = branding.logoUrl ? `${API_ORIGIN}${branding.logoUrl}` : null;
 
@@ -226,7 +247,9 @@ export default function BrandingSettings() {
                   <button
                     key={preset.name}
                     type="button"
-                    onClick={() => setColors({ primaryColor: preset.primaryColor, darkColor: preset.darkColor })}
+                    onClick={() =>
+                      setColors((c) => ({ ...c, primaryColor: preset.primaryColor, darkColor: preset.darkColor }))
+                    }
                     className={`flex items-center gap-1.5 rounded-full border pl-1 pr-3 py-1 text-xs font-medium transition-colors ${
                       active ? 'border-accent-500 bg-accent-100 text-ink-900' : 'border-surface-border text-ink-700 hover:bg-surface'
                     }`}
@@ -253,6 +276,32 @@ export default function BrandingSettings() {
               value={d}
               onChange={(v) => setColors((c) => ({ ...c, darkColor: v }))}
             />
+            <ColorField
+              label={t('branding.background')}
+              hint={t('branding.backgroundHint')}
+              value={bg}
+              onChange={(v) => setColors((c) => ({ ...c, backgroundColor: v }))}
+            />
+            <div className="flex flex-wrap gap-2 -mt-2 mb-4">
+              {backgroundChoices.map((choice) => (
+                <button
+                  key={choice.key}
+                  type="button"
+                  onClick={() => setColors((c) => ({ ...c, backgroundColor: choice.hex }))}
+                  className={`flex items-center gap-1.5 rounded-full border pl-1 pr-2.5 py-1 text-xs transition-colors ${
+                    bg === choice.hex ? 'border-accent-500 bg-accent-100 text-ink-900' : 'border-surface-border text-ink-700 hover:bg-surface'
+                  }`}
+                >
+                  <span className="h-4 w-4 rounded-full border border-black/15" style={{ backgroundColor: choice.hex }} />
+                  {t(`branding.bg.${choice.key}`)}
+                </button>
+              ))}
+            </div>
+            {bgTooDark && (
+              <p className="flex items-start gap-2 text-xs text-danger-600 bg-danger-100 rounded-md px-3 py-2 mb-2">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" /> {t('branding.backgroundTooDark')}
+              </p>
+            )}
 
             {buttonContrast < 2.6 && (
               <p className="flex items-start gap-2 text-xs text-warning-600 bg-warning-100 rounded-md px-3 py-2 mb-2">
@@ -267,13 +316,13 @@ export default function BrandingSettings() {
 
             <div className="flex flex-wrap items-center gap-2 mt-4">
               <Button
-                onClick={() => save({ primaryColor: p, darkColor: d })}
-                disabled={!dirty || busy === 'colors'}
+                onClick={() => save({ primaryColor: p, darkColor: d, backgroundColor: bg })}
+                disabled={!dirty || bgTooDark || busy === 'colors'}
                 icon={Save}
               >
                 {busy === 'colors' ? t('common.loading') : t('branding.saveColors')}
               </Button>
-              {(p !== DEFAULTS.primaryColor || d !== DEFAULTS.darkColor) && (
+              {(p !== DEFAULTS.primaryColor || d !== DEFAULTS.darkColor || bg !== DEFAULTS.backgroundColor) && (
                 <Button variant="ghost" icon={RotateCcw} onClick={() => setColors(DEFAULTS)}>
                   {t('branding.reset')}
                 </Button>
@@ -286,14 +335,20 @@ export default function BrandingSettings() {
         {/* Live preview of the shop with these colours */}
         <div className="lg:sticky lg:top-20 h-fit">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-500 mb-2">{t('branding.preview')}</p>
-          <div className="rounded-xl border border-surface-border overflow-hidden bg-white shadow-sm text-[13px]">
-            <div className="flex items-center gap-3 px-4 h-14 border-b border-surface-border">
+          <div
+            className="rounded-xl border border-surface-border overflow-hidden shadow-sm text-[13px]"
+            style={{ backgroundColor: bg }}
+          >
+            <div className="flex items-center gap-3 px-4 h-14 border-b" style={{ borderColor: shade.border }}>
               {logo ? (
                 <img src={logo} alt="" className="h-8 w-auto max-w-28 object-contain" />
               ) : (
                 <span className="font-extrabold" style={{ color: d }}>IT Mart</span>
               )}
-              <div className="flex-1 flex items-center gap-2 rounded-full bg-[#f7f8fa] border border-[#e6e8ee] px-3 h-8 text-[#a6acc4]">
+              <div
+                className="flex-1 flex items-center gap-2 rounded-full border px-3 h-8 text-[#a6acc4]"
+                style={{ backgroundColor: shade.surface, borderColor: shade.border }}
+              >
                 <Search size={13} /> {t('branding.previewSearch')}
               </div>
               <ShoppingCart size={18} style={{ color: d }} />
@@ -307,8 +362,8 @@ export default function BrandingSettings() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[0, 1].map((i) => (
-                  <div key={i} className="rounded-lg border border-[#e6e8ee] overflow-hidden">
-                    <div className="relative aspect-[4/3] bg-[#f7f8fa]">
+                  <div key={i} className="rounded-lg border overflow-hidden bg-white" style={{ borderColor: shade.border }}>
+                    <div className="relative aspect-[4/3]" style={{ backgroundColor: shade.surface }}>
                       {i === 0 && (
                         <span className="absolute top-2 left-2 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: p }}>
                           -15%

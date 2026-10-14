@@ -16,9 +16,7 @@ import BannerList from './pages/banners/BannerList';
 import AdminsList from './pages/admins/AdminsList';
 import Analytics from './pages/analytics/Analytics';
 import DeliveryZoneList from './pages/delivery-zones/DeliveryZoneList';
-import TrackingSettings from './pages/settings/TrackingSettings';
-import BrandingSettings from './pages/settings/BrandingSettings';
-import StoreSettings from './pages/settings/StoreSettings';
+import SettingsPage from './pages/settings/SettingsPage';
 
 // Route "handle" carries translation KEYS, not translated strings — the
 // router is created once (module scope), so AdminLayout/Topbar translate
@@ -81,20 +79,14 @@ const router = createBrowserRouter([
         handle: { titleKey: 'orders.title', subtitleKey: 'orders.subtitle' },
       },
       {
-        path: 'store',
-        element: <StoreSettings />,
-        handle: { titleKey: 'nav.store', subtitleKey: 'store.subtitle' },
+        // Boutique & contact / Identité visuelle / Suivi & publicité, as tabs
+        path: 'settings/:tab?',
+        element: <SettingsPage />,
+        handle: { titleKey: 'nav.settings', subtitleKey: 'settings.hubSubtitle' },
       },
-      {
-        path: 'branding',
-        element: <BrandingSettings />,
-        handle: { titleKey: 'nav.branding', subtitleKey: 'branding.subtitle' },
-      },
-      {
-        path: 'settings',
-        element: <TrackingSettings />,
-        handle: { titleKey: 'nav.settings', subtitleKey: 'settings.subtitle' },
-      },
+      // Old addresses of the three pages
+      { path: 'store', element: <Navigate to="/settings/store" replace /> },
+      { path: 'branding', element: <Navigate to="/settings/branding" replace /> },
       {
         path: 'admins',
         element: <AdminsList />,

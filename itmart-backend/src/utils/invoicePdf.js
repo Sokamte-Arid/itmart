@@ -4,6 +4,7 @@ const PDFDocument = require('pdfkit');
 const sharp = require('sharp');
 const { amountInWords } = require('./amountInWords');
 const { readBranding } = require('./branding');
+const { readStore } = require('./storeSettings');
 
 // ---------------------------------------------------------------------------
 // Builds an invoice / proforma PDF for an order.
@@ -92,20 +93,22 @@ const formatDate = (d, lang) =>
     year: 'numeric',
   });
 
-function companyFromEnv() {
+// Company details: admin → Boutique & contact, each falling back to .env
+async function companyInfo() {
   const e = process.env;
+  const store = await readStore();
   return {
-    name: e.COMPANY_NAME || 'IT Mart',
-    address: e.COMPANY_ADDRESS || '',
-    city: e.COMPANY_CITY || '',
-    phone: e.COMPANY_PHONE || (e.ADMIN_WHATSAPP_NUMBER ? `+${e.ADMIN_WHATSAPP_NUMBER}` : ''),
-    email: e.COMPANY_EMAIL || e.ADMIN_EMAIL || '',
-    niu: e.COMPANY_NIU || '',
-    rccm: e.COMPANY_RCCM || '',
+    name: store.companyName,
+    address: store.companyAddress,
+    city: store.companyCity,
+    phone: store.contactPhone || e.COMPANY_PHONE || (store.whatsappNumber ? `+${store.whatsappNumber}` : ''),
+    email: store.contactEmail || e.COMPANY_EMAIL || '',
+    niu: store.companyNiu,
+    rccm: store.companyRccm,
     logo: e.COMPANY_LOGO || '',
-    footer: e.INVOICE_FOOTER || '',
-    vatRate: Number(e.INVOICE_VAT_RATE || 0),
-    proformaValidityDays: Number(e.PROFORMA_VALIDITY_DAYS || 15),
+    footer: store.invoiceFooter,
+    vatRate: Number(store.vatRate || 0),
+    proformaValidityDays: Number(store.proformaValidityDays || 15),
   };
 }
 
@@ -132,7 +135,7 @@ async function loadLogo(logoPath) {
  */
 async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
   const t = T[lang] || T.fr;
-  const company = companyFromEnv();
+  const company = await companyInfo();
   // Logo and colours from the admin (Identité visuelle); the .env logo is a fallback
   const branding = await readBranding().catch(() => null);
   const C = {

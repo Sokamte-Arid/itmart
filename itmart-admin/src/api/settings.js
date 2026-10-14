@@ -19,3 +19,8 @@ export const uploadBrandingImage = (kind, file) => {
     .post(`/settings/branding/${kind}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
     .then((res) => res.data);
 };
+
+// Shop details (WhatsApp, contact, social links, notifications, invoices)
+export const getStoreSettings = () => client.get('/settings/store/admin').then((res) => res.data);
+
+export const updateStoreSettings = (payload) => client.put('/settings/store', payload).then((res) => res.data);

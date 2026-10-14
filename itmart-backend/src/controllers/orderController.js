@@ -11,6 +11,7 @@ const { notifyNewOrder, notifyLowStock } = require('../utils/push');
 const { buildInvoicePdf } = require('../utils/invoicePdf');
 const { stripCostPrice, stripCostPriceFromList } = require('../utils/sanitizeProduct');
 const { variantLabel } = require('../utils/variants');
+const { readStore, getLowStockThreshold } = require('../utils/storeSettings');
 
 const MAX_QUANTITY_PER_LINE = 999;
 
@@ -155,7 +156,8 @@ const createOrder = asyncHandler(async (req, res) => {
     quantity: i.quantity,
     unitPrice: i.unitPrice,
   }));
-  const whatsappLink = buildOrderWhatsAppLink(order, itemsForMessage, lang);
+  const store = await readStore();
+  const whatsappLink = buildOrderWhatsAppLink(order, itemsForMessage, lang, store.whatsappNumber);
 
   // Fire-and-forget the confirmation emails — never block the order response on them
   sendOrderConfirmationEmail(order, itemsForMessage, lang).catch((err) =>
@@ -248,7 +250,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   const valid = ['PENDING', 'CONTACTED', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
   if (!valid.includes(status)) throw new ApiError(400, `status must be one of: ${valid.join(', ')}`);
 
-  const threshold = Number(process.env.LOW_STOCK_THRESHOLD || 5);
+  const threshold = await getLowStockThreshold();
   const crossedLowStock = [];
 
   const order = await prisma.$transaction(async (tx) => {

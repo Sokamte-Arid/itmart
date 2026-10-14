@@ -6,6 +6,7 @@ const { sendLowStockAlertEmail } = require('../utils/mailer');
 const { notifyLowStock } = require('../utils/push');
 const { stripCostPrice, stripCostPriceFromList } = require('../utils/sanitizeProduct');
 const { normaliseVariants } = require('../utils/variants');
+const { getLowStockThreshold } = require('../utils/storeSettings');
 
 // What the product cards need to know about variants: whether there are any
 // (the card's cart button then opens the product page to choose) and the
@@ -470,7 +471,7 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   const product = await prisma.product.update({ where: { id: req.params.id }, data });
 
-  const threshold = Number(process.env.LOW_STOCK_THRESHOLD || 5);
+  const threshold = await getLowStockThreshold();
   if (before && before.stock > threshold && product.stock <= threshold) {
     sendLowStockAlertEmail(product).catch((err) =>
       console.error('[product] Failed to send low-stock alert email:', err.message)
@@ -485,7 +486,7 @@ const updateProduct = asyncHandler(async (req, res) => {
 
 // GET /api/products/low-stock  (admin — products at or below the threshold, for the dashboard)
 const getLowStockProducts = asyncHandler(async (req, res) => {
-  const threshold = Number(process.env.LOW_STOCK_THRESHOLD || 5);
+  const threshold = await getLowStockThreshold();
   const products = await prisma.product.findMany({
     where: { isActive: true, stock: { lte: threshold } },
     include: { images: { where: { isPrimary: true }, take: 1 } },
@@ -671,7 +672,7 @@ const setProductVariants = asyncHandler(async (req, res) => {
   }
 
   // Same low-stock alert as a manual stock change
-  const threshold = Number(process.env.LOW_STOCK_THRESHOLD || 5);
+  const threshold = await getLowStockThreshold();
   if (variants.length > 0 && product.stock > threshold && updated.stock <= threshold) {
     sendLowStockAlertEmail(updated).catch((err) =>
       console.error('[product] Failed to send low-stock alert email:', err.message)

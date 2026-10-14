@@ -2,11 +2,12 @@ import './globals.css';
 import { CartProvider } from '@/context/CartContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import FloatingEmailButton from '@/components/FloatingEmailButton';
+import FloatingWhatsAppButton from '@/components/FloatingWhatsAppButton';
 import Analytics from '@/components/Analytics';
 import ScrollReveal from '@/components/ScrollReveal';
 import { getDictionary } from '@/lib/i18n';
-import { getCategories, getTrackingSettings, getBranding, imageUrl } from '@/lib/api';
+import { getCategories, getTrackingSettings, getBranding, getStoreInfo, getDeliveryCities, imageUrl } from '@/lib/api';
+import { StoreInfoProvider } from '@/context/StoreContext';
 import { brandingCss, safeBrandingImage } from '@/lib/theme';
 
 const baseMetadata = {
@@ -40,10 +41,12 @@ export async function generateViewport() {
 
 export default async function RootLayout({ children }) {
   const { locale, t } = await getDictionary();
-  const [categories, trackingSettings, branding] = await Promise.all([
+  const [categories, trackingSettings, branding, storeInfo, deliveryCities] = await Promise.all([
     getCategories(),
     getTrackingSettings(),
     getBranding(),
+    getStoreInfo(),
+    getDeliveryCities(),
   ]);
   const themeCss = brandingCss(branding);
   const logoUrl = safeBrandingImage(branding?.logoUrl);
@@ -62,12 +65,15 @@ export default async function RootLayout({ children }) {
         {themeCss && <style id="brand-theme" dangerouslySetInnerHTML={{ __html: themeCss }} />}
       </head>
       <body className="min-h-full flex flex-col">
-        <CartProvider>
-          <Header dict={t} locale={locale} categories={categories} logoUrl={logoUrl} />
-          <main className="flex-1">{children}</main>
-          <Footer dict={t} logoUrl={logoUrl} />
-          <FloatingEmailButton label={t.footer.emailUs} />
-        </CartProvider>
+        <StoreInfoProvider value={storeInfo}>
+          <CartProvider>
+            <Header dict={t} locale={locale} categories={categories} logoUrl={logoUrl} />
+            <main className="flex-1">{children}</main>
+            <Footer dict={t} logoUrl={logoUrl} store={storeInfo} deliveryCities={deliveryCities} />
+            {/* WhatsApp chat button (the email button is kept in components/ if needed later) */}
+            <FloatingWhatsAppButton label={t.footer.chatWhatsapp} locale={locale} />
+          </CartProvider>
+        </StoreInfoProvider>
         {/* Facebook Pixel / Google tag / Clarity — IDs entered in the admin (Suivi & publicité) */}
         <Analytics dict={t} settings={trackingSettings} />
         {/* Sections and product cards fade in as you scroll */}

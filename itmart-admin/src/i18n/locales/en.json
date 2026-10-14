@@ -14,7 +14,8 @@
     "home": "Home",
     "mobileApp": "Mobile app",
     "settings": "Tracking & ads",
-    "branding": "Branding"
+    "branding": "Branding",
+    "store": "Shop & contact"
   },
   "login": {
     "title": "Admin login",
@@ -389,5 +390,91 @@
     "previewBuy": "Buy",
     "previewNote": "Delivery across Cameroon",
     "previewFooter": "© Your shop"
+  },
+  "store": {
+    "subtitle": "WhatsApp, contacts, social media, invoices",
+    "intro": "Your shop's details, which you can change any time without touching the code. A field left empty uses the old value from the .env file, if there is one.",
+    "saved": "Details saved ✓",
+    "invalid": "Invalid value.",
+    "currentDefault": "Current value (.env file): {{value}}",
+    "testWhatsapp": "Test this number in WhatsApp",
+    "sections": {
+      "contact": "Contact",
+      "contactHint": "Used by the floating WhatsApp button, product questions, orders and the footer.",
+      "social": "Social media",
+      "socialHint": "An icon appears at the bottom of the site for each link filled in.",
+      "notifications": "Notifications",
+      "notificationsHint": "Where should we tell you about new orders and low stock?",
+      "invoices": "Invoices",
+      "invoicesHint": "Details printed at the top and bottom of invoices and proformas."
+    },
+    "fields": {
+      "whatsappNumber": {
+        "label": "Shop WhatsApp number",
+        "hint": "Country code + number, no + or spaces (e.g. 237690000000). Orders and customer questions arrive on this number.",
+        "error": "Country code + number, digits only (e.g. 237690000000)."
+      },
+      "contactPhone": {
+        "label": "Phone shown",
+        "hint": "Optional. If empty, the WhatsApp number is shown."
+      },
+      "contactEmail": {
+        "label": "Contact email",
+        "hint": "Optional. Leave empty if you don't have a professional address yet: it won't be shown.",
+        "error": "Invalid email address."
+      },
+      "facebookUrl": {
+        "label": "Facebook page",
+        "error": "The link must start with https://"
+      },
+      "instagramUrl": {
+        "label": "Instagram account",
+        "error": "The link must start with https://"
+      },
+      "tiktokUrl": {
+        "label": "TikTok account",
+        "error": "The link must start with https://"
+      },
+      "notificationEmail": {
+        "label": "Email that receives alerts",
+        "hint": "A copy of each new order and low-stock alerts (on top of the app notifications).",
+        "error": "Invalid email address."
+      },
+      "lowStockThreshold": {
+        "label": "Low-stock level",
+        "hint": "Alert when a product's stock drops to this number or below.",
+        "error": "A number between 0 and 10000."
+      },
+      "companyName": {
+        "label": "Company name"
+      },
+      "companyAddress": {
+        "label": "Address"
+      },
+      "companyCity": {
+        "label": "City"
+      },
+      "companyNiu": {
+        "label": "NIU",
+        "hint": "Unique identification number (tax)."
+      },
+      "companyRccm": {
+        "label": "RCCM",
+        "hint": "Trade register."
+      },
+      "vatRate": {
+        "label": "VAT rate (%)",
+        "hint": "0 if you don't charge VAT. In Cameroon the standard rate is 19.25%.",
+        "error": "Between 0 and 100."
+      },
+      "proformaValidityDays": {
+        "label": "Proforma validity (days)",
+        "error": "Between 1 and 365 days."
+      },
+      "invoiceFooter": {
+        "label": "Note at the bottom of invoices",
+        "hint": "E.g. payment terms, bank or Mobile Money details."
+      }
+    }
   }
 }

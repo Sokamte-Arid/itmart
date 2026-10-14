@@ -6,8 +6,8 @@
  * This does NOT send anything server-side — the customer's own browser/app
  * sends the message. That's what makes it free and require no API setup.
  */
-function buildOrderWhatsAppLink(order, items, lang = 'fr') {
-  const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER;
+// adminNumber: the shop's WhatsApp number (admin → Boutique & contact)
+function buildOrderWhatsAppLink(order, items, lang = 'fr', adminNumber = process.env.ADMIN_WHATSAPP_NUMBER) {
   const subtotal = Number(order.total) - Number(order.deliveryFee || 0);
 
   const lines = [];

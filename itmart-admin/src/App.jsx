@@ -18,6 +18,7 @@ import Analytics from './pages/analytics/Analytics';
 import DeliveryZoneList from './pages/delivery-zones/DeliveryZoneList';
 import TrackingSettings from './pages/settings/TrackingSettings';
 import BrandingSettings from './pages/settings/BrandingSettings';
+import StoreSettings from './pages/settings/StoreSettings';
 
 // Route "handle" carries translation KEYS, not translated strings — the
 // router is created once (module scope), so AdminLayout/Topbar translate
@@ -78,6 +79,11 @@ const router = createBrowserRouter([
         path: 'orders',
         element: <OrderList />,
         handle: { titleKey: 'orders.title', subtitleKey: 'orders.subtitle' },
+      },
+      {
+        path: 'store',
+        element: <StoreSettings />,
+        handle: { titleKey: 'nav.store', subtitleKey: 'store.subtitle' },
       },
       {
         path: 'branding',

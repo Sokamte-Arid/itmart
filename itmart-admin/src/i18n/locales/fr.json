@@ -14,7 +14,8 @@
     "home": "Accueil",
     "mobileApp": "Application mobile",
     "settings": "Suivi & publicité",
-    "branding": "Identité visuelle"
+    "branding": "Identité visuelle",
+    "store": "Boutique & contact"
   },
   "login": {
     "title": "Connexion administrateur",
@@ -389,5 +390,91 @@
     "previewBuy": "Acheter",
     "previewNote": "Livraison partout au Cameroun",
     "previewFooter": "© Votre boutique"
+  },
+  "store": {
+    "subtitle": "WhatsApp, contacts, réseaux sociaux, factures",
+    "intro": "Les coordonnées de votre boutique, modifiables à tout moment sans toucher au code. Un champ laissé vide reprend l'ancienne valeur du fichier .env, si elle existe.",
+    "saved": "Coordonnées enregistrées ✓",
+    "invalid": "Valeur invalide.",
+    "currentDefault": "Valeur actuelle (fichier .env) : {{value}}",
+    "testWhatsapp": "Tester ce numéro dans WhatsApp",
+    "sections": {
+      "contact": "Contact",
+      "contactHint": "Utilisés par le bouton WhatsApp flottant, les questions sur un produit, les commandes et le pied de page.",
+      "social": "Réseaux sociaux",
+      "socialHint": "Les icônes apparaissent en bas du site pour chaque lien rempli.",
+      "notifications": "Notifications",
+      "notificationsHint": "Où vous prévient-on des nouvelles commandes et des stocks bas ?",
+      "invoices": "Factures",
+      "invoicesHint": "Informations imprimées en haut et en bas des factures et proformas."
+    },
+    "fields": {
+      "whatsappNumber": {
+        "label": "Numéro WhatsApp de la boutique",
+        "hint": "Indicatif pays + numéro, sans + ni espaces (ex. 237690000000). Les commandes et les questions des clients arrivent sur ce numéro.",
+        "error": "Indicatif pays + numéro, chiffres uniquement (ex. 237690000000)."
+      },
+      "contactPhone": {
+        "label": "Téléphone affiché",
+        "hint": "Optionnel. Si vide, le numéro WhatsApp est affiché."
+      },
+      "contactEmail": {
+        "label": "E-mail de contact",
+        "hint": "Optionnel. Laissez vide si vous n'avez pas encore d'adresse professionnelle : il ne sera pas affiché.",
+        "error": "Adresse e-mail invalide."
+      },
+      "facebookUrl": {
+        "label": "Page Facebook",
+        "error": "Le lien doit commencer par https://"
+      },
+      "instagramUrl": {
+        "label": "Compte Instagram",
+        "error": "Le lien doit commencer par https://"
+      },
+      "tiktokUrl": {
+        "label": "Compte TikTok",
+        "error": "Le lien doit commencer par https://"
+      },
+      "notificationEmail": {
+        "label": "E-mail qui reçoit les alertes",
+        "hint": "Copie de chaque nouvelle commande et alertes de stock bas (en plus des notifications sur l'application).",
+        "error": "Adresse e-mail invalide."
+      },
+      "lowStockThreshold": {
+        "label": "Seuil de stock bas",
+        "hint": "Alerte quand le stock d'un produit descend à ce nombre ou moins.",
+        "error": "Un nombre entre 0 et 10000."
+      },
+      "companyName": {
+        "label": "Nom de l'entreprise"
+      },
+      "companyAddress": {
+        "label": "Adresse"
+      },
+      "companyCity": {
+        "label": "Ville"
+      },
+      "companyNiu": {
+        "label": "NIU",
+        "hint": "Numéro d'identifiant unique (impôts)."
+      },
+      "companyRccm": {
+        "label": "RCCM",
+        "hint": "Registre du commerce."
+      },
+      "vatRate": {
+        "label": "Taux de TVA (%)",
+        "hint": "0 si vous n'êtes pas assujetti à la TVA. Au Cameroun, le taux normal est de 19,25 %.",
+        "error": "Entre 0 et 100."
+      },
+      "proformaValidityDays": {
+        "label": "Validité des proformas (jours)",
+        "error": "Entre 1 et 365 jours."
+      },
+      "invoiceFooter": {
+        "label": "Mention en bas de facture",
+        "hint": "Ex. conditions de paiement, coordonnées bancaires ou Mobile Money."
+      }
+    }
   }
 }

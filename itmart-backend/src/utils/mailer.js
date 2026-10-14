@@ -1,4 +1,8 @@
 const nodemailer = require('nodemailer');
+const { readStore } = require('./storeSettings');
+
+// Where new-order and low-stock emails go (admin → Boutique & contact, else ADMIN_EMAIL)
+const notificationEmail = async () => (await readStore()).notificationEmail;
 
 let transporter = null;
 
@@ -106,13 +110,14 @@ async function sendOrderConfirmationEmail(order, items, lang = 'fr') {
 }
 
 /**
- * Sends a new-order notification email to the admin (ADMIN_EMAIL).
+ * Sends a new-order notification email to the admin (notification email).
  * This is a companion to the WhatsApp link — a written record that lands
  * in the admin's inbox even if they haven't opened WhatsApp yet.
- * Silently no-ops if ADMIN_EMAIL or SMTP isn't configured.
+ * Silently no-ops if no notification email or SMTP is configured.
  */
 async function sendAdminOrderNotificationEmail(order, items) {
-  if (!process.env.ADMIN_EMAIL) return;
+  const adminEmail = await notificationEmail();
+  if (!adminEmail) return;
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn('[mailer] SMTP not configured — skipping admin notification email.');
     return;
@@ -161,7 +166,7 @@ async function sendAdminOrderNotificationEmail(order, items) {
 
   await getTransporter().sendMail({
     from: process.env.SMTP_FROM,
-    to: process.env.ADMIN_EMAIL,
+    to: adminEmail,
     subject: `🛒 New order ${order.reference} — ${order.customerName}`,
     html,
   });
@@ -173,7 +178,8 @@ async function sendAdminOrderNotificationEmail(order, items) {
  * crossing (not on every save while it stays low), to avoid spamming.
  */
 async function sendLowStockAlertEmail(product) {
-  if (!process.env.ADMIN_EMAIL) return;
+  const adminEmail = await notificationEmail();
+  if (!adminEmail) return;
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn('[mailer] SMTP not configured — skipping low-stock alert email.');
     return;
@@ -189,7 +195,7 @@ async function sendLowStockAlertEmail(product) {
 
   await getTransporter().sendMail({
     from: process.env.SMTP_FROM,
-    to: process.env.ADMIN_EMAIL,
+    to: adminEmail,
     subject: `⚠️ Low stock: ${product.nameEn} (${product.stock} left)`,
     html,
   });

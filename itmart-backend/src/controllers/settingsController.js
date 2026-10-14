@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 const { readBranding, saveBranding, HEX } = require('../utils/branding');
+const { readStore, readStoreRaw, saveStore, validateStore, publicStore, envDefaults } = require('../utils/storeSettings');
 
 // ---------------------------------------------------------------------------
 // Tracking IDs (Meta Pixel, Google Analytics, Google Ads, Microsoft Clarity),
@@ -190,7 +191,51 @@ const uploadBrandingImage = asyncHandler(async (req, res) => {
   res.json({ success: true, data: saved });
 });
 
+// ---------------------------------------------------------------------------
+// Shop details: WhatsApp, contact, social links, notifications, invoices
+// (admin → Boutique & contact)
+// ---------------------------------------------------------------------------
+
+// GET /api/settings/store  (public — only what the storefront shows)
+const getStoreSettings = asyncHandler(async (req, res) => {
+  res.set('Cache-Control', 'public, max-age=60');
+  res.json({ success: true, data: publicStore(await readStore()) });
+});
+
+// GET /api/settings/store/admin  (super admin — saved values + the .env defaults shown as hints)
+const getStoreSettingsAdmin = asyncHandler(async (req, res) => {
+  res.json({ success: true, data: { saved: await readStoreRaw(), defaults: envDefaults() } });
+});
+
+const STORE_ERRORS = {
+  whatsappNumber: ['WhatsApp : indicatif pays + numéro, chiffres uniquement (ex. 237690000000).', 'WhatsApp: country code + number, digits only (e.g. 237690000000).'],
+  contactPhone: ['Téléphone invalide (ex. +237 690 00 00 00).', 'Invalid phone number (e.g. +237 690 00 00 00).'],
+  contactEmail: ['E-mail de contact invalide.', 'Invalid contact email.'],
+  notificationEmail: ['E-mail de notification invalide.', 'Invalid notification email.'],
+  facebookUrl: ['Lien Facebook invalide : il doit commencer par https://', 'Invalid Facebook link: it must start with https://'],
+  instagramUrl: ['Lien Instagram invalide : il doit commencer par https://', 'Invalid Instagram link: it must start with https://'],
+  tiktokUrl: ['Lien TikTok invalide : il doit commencer par https://', 'Invalid TikTok link: it must start with https://'],
+  vatRate: ['Taux de TVA : entre 0 et 100.', 'VAT rate: between 0 and 100.'],
+  proformaValidityDays: ['Validité de la proforma : entre 1 et 365 jours.', 'Proforma validity: between 1 and 365 days.'],
+  lowStockThreshold: ['Seuil de stock bas : un nombre entre 0 et 10000.', 'Low-stock level: a number between 0 and 10000.'],
+};
+
+// PUT /api/settings/store  (super admin)
+const updateStoreSettings = asyncHandler(async (req, res) => {
+  const lang = req.body.lang === 'en' ? 'en' : 'fr';
+  const { values, errors } = validateStore(req.body);
+  if (errors.length) {
+    const message = errors.map((f) => (STORE_ERRORS[f] || [`${f} invalide.`, `Invalid ${f}.`])[lang === 'en' ? 1 : 0]).join(' ');
+    throw new ApiError(400, message, errors);
+  }
+  const saved = await saveStore(values);
+  res.json({ success: true, data: { saved, defaults: envDefaults() } });
+});
+
 module.exports = {
+  getStoreSettings,
+  getStoreSettingsAdmin,
+  updateStoreSettings,
   getTrackingSettings,
   updateTrackingSettings,
   getBrandingSettings,

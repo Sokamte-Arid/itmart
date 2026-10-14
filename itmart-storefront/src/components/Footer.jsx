@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import CookieSettingsLink from './CookieSettingsLink';
 import { imageUrl } from '@/lib/api';
-import { Cpu, Phone, Mail, Truck, ShieldCheck, MessageCircle, Wallet, HelpCircle, MapPin, PackageCheck } from 'lucide-react';
+import { Cpu, Phone, Mail, Truck, ShieldCheck, MessageCircle, Wallet, HelpCircle, MapPin, PackageCheck, Music2 } from 'lucide-react';
 
+// Shown only while no delivery zone exists yet (admin → Zones de livraison)
 const CITIES = ['Yaoundé', 'Douala', 'Bafoussam', 'Bamenda', 'Garoua', 'Maroua'];
 
 // lucide-react no longer ships brand/logo icons (Facebook, Instagram, etc.),
@@ -26,25 +27,30 @@ function InstagramIcon(props) {
 }
 
 // logoUrl: the shop logo uploaded in the admin (Identité visuelle), if any
-export default function Footer({ dict, logoUrl = null }) {
-  const phone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '+237 6XX XXX XXX';
-  const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'contact@itmart.cm';
-  const facebookUrl = process.env.NEXT_PUBLIC_FACEBOOK_URL;
-  const instagramUrl = process.env.NEXT_PUBLIC_INSTAGRAM_URL;
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+// store: contact details and social links (admin → Boutique & contact)
+// deliveryCities: active delivery zones (admin → Zones de livraison)
+export default function Footer({ dict, logoUrl = null, store = {}, deliveryCities = [] }) {
+  const { whatsappNumber, facebookUrl, instagramUrl, tiktokUrl } = store;
+  const email = store.contactEmail;
+  // Phone shown in the footer: the one entered, else the WhatsApp number
+  const phone = store.contactPhone || (whatsappNumber ? `+${whatsappNumber}` : '');
+  const whatsappLink = whatsappNumber ? `https://wa.me/${whatsappNumber}` : null;
+  const cities = deliveryCities.length ? deliveryCities.slice(0, 8) : CITIES;
 
   const trustItems = [
     { icon: Truck, label: dict.footer.trustDelivery },
     { icon: ShieldCheck, label: dict.footer.trustGenuine },
     { icon: MessageCircle, label: dict.footer.trustSupport },
     { icon: Wallet, label: dict.footer.trustPayOnDelivery },
-    { icon: HelpCircle, label: dict.footer.trustHelp, href: `mailto:${email}` },
+    // Questions go to WhatsApp (or email if there's no WhatsApp number)
+    { icon: HelpCircle, label: dict.footer.trustHelp, href: whatsappLink || (email ? `mailto:${email}` : null) },
   ];
 
   const socialLinks = [
     facebookUrl && { icon: FacebookIcon, href: facebookUrl, label: 'Facebook' },
     instagramUrl && { icon: InstagramIcon, href: instagramUrl, label: 'Instagram' },
-    whatsappNumber && { icon: MessageCircle, href: `https://wa.me/${whatsappNumber}`, label: 'WhatsApp' },
+    tiktokUrl && { icon: Music2, href: tiktokUrl, label: 'TikTok' },
+    whatsappLink && { icon: MessageCircle, href: whatsappLink, label: 'WhatsApp' },
   ].filter(Boolean);
 
   return (
@@ -82,7 +88,7 @@ export default function Footer({ dict, logoUrl = null }) {
               <MapPin size={28} className="text-brand-500 shrink-0" strokeWidth={1.5} />
               <div>
                 <p className="text-white font-semibold text-sm mb-1">{dict.footer.deliveryWhere}</p>
-                <p className="text-sm text-white/70">{CITIES.join(', ')}...</p>
+                <p className="text-sm text-white/70">{cities.join(', ')}{deliveryCities.length > 8 || !deliveryCities.length ? '...' : ''}</p>
               </div>
             </div>
             <div className="flex gap-4">
@@ -180,15 +186,30 @@ export default function Footer({ dict, logoUrl = null }) {
         <div>
           <h3 className="text-white font-semibold text-sm mb-4">{dict.footer.contact}</h3>
           <ul className="space-y-2.5 text-sm">
-            <li className="flex items-center gap-2">
-              <Phone size={14} className="shrink-0" /> {phone}
-            </li>
-            <li className="flex items-center gap-2">
-              <Mail size={14} className="shrink-0" />
-              <a href={`mailto:${email}`} className="hover:text-white transition-colors">
-                {email}
-              </a>
-            </li>
+            {whatsappLink && (
+              <li className="flex items-center gap-2">
+                <MessageCircle size={14} className="shrink-0" />
+                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                  WhatsApp
+                </a>
+              </li>
+            )}
+            {phone && (
+              <li className="flex items-center gap-2">
+                <Phone size={14} className="shrink-0" />
+                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="hover:text-white transition-colors">
+                  {phone}
+                </a>
+              </li>
+            )}
+            {email && (
+              <li className="flex items-center gap-2">
+                <Mail size={14} className="shrink-0" />
+                <a href={`mailto:${email}`} className="hover:text-white transition-colors">
+                  {email}
+                </a>
+              </li>
+            )}
           </ul>
         </div>
       </div>

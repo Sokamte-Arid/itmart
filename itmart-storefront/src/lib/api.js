@@ -89,6 +89,35 @@ export async function getBranding() {
   return res?.data || null;
 }
 
+// WhatsApp number, phone, email, social links (admin → Boutique & contact).
+export async function getStoreInfo() {
+  const res = await apiFetch('/settings/store', { revalidate: 60 });
+  const env = {
+    whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
+    contactPhone: process.env.NEXT_PUBLIC_CONTACT_PHONE || '',
+    contactEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL || '',
+    facebookUrl: process.env.NEXT_PUBLIC_FACEBOOK_URL || '',
+    instagramUrl: process.env.NEXT_PUBLIC_INSTAGRAM_URL || '',
+    tiktokUrl: '',
+  };
+  // The .env values are only used when the backend can't be reached
+  const data = res?.data || env;
+  const clean = {};
+  for (const key of Object.keys(env)) clean[key] = data[key] || '';
+  // Only digits in the number, only https:// links
+  clean.whatsappNumber = /^\d{8,15}$/.test(clean.whatsappNumber) ? clean.whatsappNumber : '';
+  for (const key of ['facebookUrl', 'instagramUrl', 'tiktokUrl']) {
+    if (!/^https:\/\/[^\s<>"']+$/i.test(clean[key])) clean[key] = '';
+  }
+  return clean;
+}
+
+// Active delivery cities (admin → Zones de livraison), for the footer
+export async function getDeliveryCities() {
+  const res = await apiFetch('/delivery-zones');
+  return (res?.data || []).map((z) => z.city).filter(Boolean);
+}
+
 export const API_ORIGIN = process.env.NEXT_PUBLIC_API_ORIGIN || 'http://localhost:5000';
 
 export function imageUrl(path) {

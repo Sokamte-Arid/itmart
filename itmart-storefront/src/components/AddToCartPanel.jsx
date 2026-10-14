@@ -7,12 +7,14 @@ import { Minus, Plus, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { pickLang, interpolate } from '@/lib/i18nHelpers';
 import { buildProductInquiryLink } from '@/lib/contact';
+import { useStoreInfo } from '@/context/StoreContext';
 
 // product: { id, variantId?, variantLabel?, nameEn, nameFr, price, discountPrice, stock, images, image? }
 // missingChoice: the option still to choose (e.g. "Pointure") — the Buy
 // button waits for it.
 export default function AddToCartPanel({ product, missingChoice, dict, locale }) {
   const { addItem } = useCart();
+  const { whatsappNumber } = useStoreInfo();
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const outOfStock = !missingChoice && product.stock === 0;
@@ -48,7 +50,7 @@ export default function AddToCartPanel({ product, missingChoice, dict, locale })
   const handleWhatsAppInquiry = () => {
     trackContact('whatsapp');
     const fullName = product.variantLabel ? `${name} (${product.variantLabel})` : name;
-    window.open(buildProductInquiryLink(product, fullName, locale), '_blank', 'noopener,noreferrer');
+    window.open(buildProductInquiryLink(product, fullName, locale, whatsappNumber), '_blank', 'noopener,noreferrer');
   };
 
   if (outOfStock) {
@@ -71,14 +73,16 @@ export default function AddToCartPanel({ product, missingChoice, dict, locale })
           <ShoppingBag size={17} />
           {interpolate(dict.product.chooseOption, { option: missingChoice.toLowerCase() })}
         </button>
-        <button
-          onClick={handleWhatsAppInquiry}
-          aria-label={dict.product.askOnWhatsapp}
-          title={dict.product.askOnWhatsapp}
-          className="shrink-0 h-[52px] w-[52px] rounded-full bg-whatsapp hover:bg-whatsapp-dark text-white flex items-center justify-center transition-colors"
-        >
-          <MessageCircle size={22} />
-        </button>
+        {whatsappNumber && (
+          <button
+            onClick={handleWhatsAppInquiry}
+            aria-label={dict.product.askOnWhatsapp}
+            title={dict.product.askOnWhatsapp}
+            className="shrink-0 h-[52px] w-[52px] rounded-full bg-whatsapp hover:bg-whatsapp-dark text-white flex items-center justify-center transition-colors"
+          >
+            <MessageCircle size={22} />
+          </button>
+        )}
       </div>
     );
   }
@@ -116,14 +120,16 @@ export default function AddToCartPanel({ product, missingChoice, dict, locale })
           <ShoppingBag size={17} />
           {dict.product.buyNow}
         </button>
-        <button
-          onClick={handleWhatsAppInquiry}
-          aria-label={dict.product.askOnWhatsapp}
-          title={dict.product.askOnWhatsapp}
-          className="shrink-0 h-[52px] w-[52px] rounded-full bg-whatsapp hover:bg-whatsapp-dark text-white flex items-center justify-center transition-colors"
-        >
-          <MessageCircle size={22} />
-        </button>
+        {whatsappNumber && (
+          <button
+            onClick={handleWhatsAppInquiry}
+            aria-label={dict.product.askOnWhatsapp}
+            title={dict.product.askOnWhatsapp}
+            className="shrink-0 h-[52px] w-[52px] rounded-full bg-whatsapp hover:bg-whatsapp-dark text-white flex items-center justify-center transition-colors"
+          >
+            <MessageCircle size={22} />
+          </button>
+        )}
       </div>
     </div>
   );

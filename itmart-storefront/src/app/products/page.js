@@ -6,6 +6,7 @@ import ShopSidebarLayout from '@/components/ShopSidebarLayout';
 import SortSelect from '@/components/SortSelect';
 import Pagination from '@/components/Pagination';
 import { PackageSearch } from 'lucide-react';
+import Link from 'next/link';
 
 export async function generateMetadata({ searchParams }) {
   const sp = await searchParams;
@@ -71,6 +72,19 @@ export default async function ProductsPage({ searchParams }) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {sp.q && <TrackSearch query={sp.q} />}
       <div className="mb-6">
+        {/* Where this category sits: Imprimantes › Jet d'encre › ... */}
+        {!sp.q && selectedCategory?.ancestors?.length > 0 && (
+          <nav className="text-xs text-ink-500 mb-1 flex flex-wrap items-center gap-1">
+            {selectedCategory.ancestors.map((a) => (
+              <span key={a.id} className="flex items-center gap-1">
+                <Link href={`/products?category=${a.slug}`} className="hover:text-brand-600">
+                  {pickLang(a, 'name', locale)}
+                </Link>
+                <span>›</span>
+              </span>
+            ))}
+          </nav>
+        )}
         <h1 className="text-2xl font-bold text-navy-900">
           {sp.q ? `"${sp.q}"` : selectedCategory ? pickLang(selectedCategory, 'name', locale) : t.nav.allProducts}
         </h1>

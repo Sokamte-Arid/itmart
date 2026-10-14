@@ -9,6 +9,10 @@ import { fetchSearchSuggestions } from '@/lib/clientApi';
 import { imageUrl } from '@/lib/api';
 import { pickLang } from '@/lib/i18nHelpers';
 
+// Subcategories at every level, in order, with their depth below the main one
+const flatten = (list = [], depth = 0) =>
+  list.flatMap((cat) => [{ cat, depth }, ...flatten(cat.children, depth + 1)]);
+
 // logoUrl: the shop logo uploaded in the admin (Identité visuelle), if any
 export default function Header({ dict, locale, categories = [], logoUrl = null }) {
   const router = useRouter();
@@ -207,7 +211,7 @@ export default function Header({ dict, locale, categories = [], logoUrl = null }
                 </button>
 
                 {isOpen && (
-                  <div className="hidden sm:block absolute left-0 top-full bg-white border border-surface-border rounded-lg shadow-lg py-1.5 min-w-[200px] z-50">
+                  <div className="hidden sm:block absolute left-0 top-full bg-white border border-surface-border rounded-lg shadow-lg py-1.5 min-w-[200px] max-h-[70vh] overflow-y-auto z-50">
                     <Link
                       href={`/products?category=${cat.slug}`}
                       onClick={() => setOpenCategoryId(null)}
@@ -216,13 +220,18 @@ export default function Header({ dict, locale, categories = [], logoUrl = null }
                       {dict.nav.allInCategory} {pickLang(cat, 'name', locale)}
                     </Link>
                     <div className="border-t border-surface-border my-1" />
-                    {cat.children.map((child) => (
+                    {/* Subcategories at every level, indented */}
+                    {flatten(cat.children).map(({ cat: child, depth }) => (
                       <Link
                         key={child.id}
                         href={`/products?category=${child.slug}`}
                         onClick={() => setOpenCategoryId(null)}
-                        className="block px-4 py-2 text-sm text-ink-700 hover:bg-surface hover:text-brand-600"
+                        className={`block py-2 pr-4 hover:bg-surface hover:text-brand-600 ${
+                          depth === 0 ? 'text-sm text-ink-700' : 'text-[13px] text-ink-500'
+                        }`}
+                        style={{ paddingLeft: `${1 + depth * 0.9}rem` }}
                       >
+                        {depth > 0 && <span className="text-ink-300 mr-1">└</span>}
                         {pickLang(child, 'name', locale)}
                       </Link>
                     ))}

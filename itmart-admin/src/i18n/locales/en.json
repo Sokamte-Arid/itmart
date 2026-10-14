@@ -15,7 +15,8 @@
     "mobileApp": "Mobile app",
     "settings": "Settings",
     "branding": "Branding",
-    "store": "Shop & contact"
+    "store": "Shop & contact",
+    "catalog": "Catalogue"
   },
   "login": {
     "title": "Admin login",
@@ -155,7 +156,9 @@
     "orderHint": "This is the order the characteristics appear in on the product page. Use ↑ ↓ to change it.",
     "moveUp": "Move up",
     "moveDown": "Move down",
-    "hiddenThirdLevel": "⚠ Not visible on the shop: it sits under a subcategory. Edit it (✎) and choose a main category as its parent."
+    "parent": "Parent category",
+    "noParent": "— None (main category) —",
+    "parentHint": "Choose any category or subcategory to add one more level ({{max}} levels at most)."
   },
   "brands": {
     "title": "Brands",
@@ -488,5 +491,8 @@
         "hint": "E.g. payment terms, bank or Mobile Money details."
       }
     }
+  },
+  "catalog": {
+    "subtitle": "Products, categories and brands"
   }
 }

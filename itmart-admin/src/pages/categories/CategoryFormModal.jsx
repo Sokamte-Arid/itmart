@@ -7,6 +7,7 @@ import { Field, Input, Select } from '../../components/ui/Field';
 import * as categoriesApi from '../../api/categories';
 import { API_ORIGIN } from '../../api/client';
 import { useToast } from '../../components/ui/Toast';
+import { flattenTree, subtreeIds, findInTree, indentedLabel, MAX_DEPTH } from '../../utils/categoryTree';
 
 const emptyForm = { nameEn: '', nameFr: '', parentId: '' };
 
@@ -96,19 +97,25 @@ export default function CategoryFormModal({ open, onClose, category, categories,
             onChange={(e) => setForm({ ...form, nameFr: e.target.value })}
           />
         </Field>
-        <Field label="Parent category">
+        <Field label={t('categories.parent')} hint={t('categories.parentHint', { max: MAX_DEPTH })}>
           <Select
             value={form.parentId}
             onChange={(e) => setForm({ ...form, parentId: e.target.value })}
           >
-            <option value="">— None (top-level) —</option>
-            {categories
-              ?.filter((c) => c.id !== category?.id)
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nameEn}
-                </option>
-              ))}
+            <option value="">{t('categories.noParent')}</option>
+            {(() => {
+              // Any category at any level can be the parent, except this
+              // category itself and its own subcategories (that would be a loop)
+              const editingNode = category ? findInTree(categories, category.id) : null;
+              const excluded = subtreeIds(editingNode);
+              return flattenTree(categories)
+                .filter((c) => !excluded.has(c.id) && c.depth < MAX_DEPTH - 1)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {indentedLabel(c)}
+                  </option>
+                ));
+            })()}
           </Select>
         </Field>
         <div className="flex justify-end gap-2 mt-6">

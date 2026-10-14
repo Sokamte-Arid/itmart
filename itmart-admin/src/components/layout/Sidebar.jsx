@@ -1,10 +1,8 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Package,
-  FolderTree,
-  Tags,
   ShoppingBag,
   Cpu,
   Image,
@@ -20,13 +18,14 @@ import { useAuth } from '../../context/AuthContext';
 export default function Sidebar({ mobileOpen, onMobileClose, onOpenMobileApp }) {
   const { t } = useTranslation();
   const { admin } = useAuth();
+  const { pathname } = useLocation();
 
   const links = [
     { to: '/', label: t('nav.dashboard'), icon: LayoutDashboard, end: true },
     { to: '/analytics', label: t('nav.analytics'), icon: BarChart3 },
-    { to: '/products', label: t('nav.products'), icon: Package },
-    { to: '/categories', label: t('nav.categories'), icon: FolderTree },
-    { to: '/brands', label: t('nav.brands'), icon: Tags },
+    // Products, categories and brands (one page with tabs); also lit up
+    // while editing a product
+    { to: '/catalog', label: t('nav.catalog'), icon: Package, also: ['/products'] },
     { to: '/banners', label: t('nav.banners'), icon: Image },
     { to: '/delivery-zones', label: t('nav.deliveryZones'), icon: Truck },
     { to: '/orders', label: t('nav.orders'), icon: ShoppingBag },
@@ -42,7 +41,7 @@ export default function Sidebar({ mobileOpen, onMobileClose, onOpenMobileApp }) 
 
   const navLinks = (onLinkClick) => (
     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      {links.map(({ to, label, icon: Icon, end }) => (
+      {links.map(({ to, label, icon: Icon, end, also }) => (
         <NavLink
           key={to}
           to={to}
@@ -50,7 +49,7 @@ export default function Sidebar({ mobileOpen, onMobileClose, onOpenMobileApp }) 
           onClick={onLinkClick}
           className={({ isActive }) =>
             `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              isActive
+              isActive || also?.some((p) => pathname.startsWith(p))
                 ? 'bg-accent-500 text-ink-950'
                 : 'text-ink-300 hover:bg-white/5 hover:text-white'
             }`

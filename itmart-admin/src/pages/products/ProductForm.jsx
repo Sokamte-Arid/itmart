@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Upload, Star, Trash2, ImageOff, Camera } from 'lucide-react';
@@ -7,6 +7,7 @@ import * as categoriesApi from '../../api/categories';
 import * as brandsApi from '../../api/brands';
 import RelatedProductsPicker from './RelatedProductsPicker';
 import VariantsEditor, { newVariantKey } from './VariantsEditor';
+import { flattenTree, indentedLabel } from '../../utils/categoryTree';
 import { API_ORIGIN } from '../../api/client';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -58,7 +59,7 @@ export default function ProductForm() {
   // Categories arrive as top-level records with nested `children` — flatten
   // so a product can be matched to (and assigned into) a subcategory too,
   // not just a top-level category.
-  const allCategoriesFlat = categories.flatMap((c) => [c, ...(c.children || [])]);
+  const allCategoriesFlat = flattenTree(categories);
   const selectedCategory = allCategoriesFlat.find((c) => c.id === form.categoryId);
 
   // The price the customer actually pays: the promotional price when one is
@@ -258,7 +259,7 @@ export default function ProductForm() {
   return (
     <div>
       <button
-        onClick={() => navigate('/products')}
+        onClick={() => navigate('/catalog/products')}
         className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-900 mb-4"
       >
         <ArrowLeft size={15} /> {t('common.back')}
@@ -565,19 +566,11 @@ export default function ProductForm() {
                 onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
               >
                 <option value="">—</option>
-                {categories.map((c) => (
-                  <Fragment key={c.id}>
-                    <option value={c.id}>{c.nameEn}</option>
-                    {c.children?.length > 0 && (
-                      <optgroup label={c.nameEn}>
-                        {c.children.map((child) => (
-                          <option key={child.id} value={child.id}>
-                            {child.nameEn}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                  </Fragment>
+                {/* Every level, indented: a product can go in any subcategory */}
+                {allCategoriesFlat.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {indentedLabel(c)}
+                  </option>
                 ))}
               </Select>
             </Field>

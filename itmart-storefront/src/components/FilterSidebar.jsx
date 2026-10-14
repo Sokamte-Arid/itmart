@@ -5,6 +5,59 @@ import { useState } from 'react';
 import { X, SlidersHorizontal } from 'lucide-react';
 import { pickLang } from '@/lib/i18nHelpers';
 
+// Ids from the main category down to the category with this slug
+function pathTo(tree, slug, trail = []) {
+  if (!slug) return new Set();
+  for (const cat of tree || []) {
+    const next = [...trail, cat.id];
+    if (cat.slug === slug) return new Set(next);
+    const found = pathTo(cat.children, slug, next);
+    if (found.size) return found;
+  }
+  return new Set();
+}
+
+function CategoryNode({ cat, depth, openIds, selected, onSelect, locale }) {
+  const isSelected = selected === cat.slug;
+  const children = cat.children || [];
+  // Level 1 shows its subcategories; deeper ones only when on the chosen path
+  const showChildren = children.length > 0 && (depth === 0 || openIds.has(cat.id));
+  return (
+    <div>
+      <button
+        onClick={() => onSelect(cat.slug)}
+        className={`flex items-center gap-1 w-full text-left rounded-lg transition-colors ${
+          depth === 0 ? 'text-sm px-2.5 py-1.5' : 'text-xs px-2.5 py-1'
+        } ${
+          isSelected
+            ? 'bg-brand-50 text-brand-600 font-medium'
+            : depth === 0
+            ? 'text-ink-700 hover:bg-surface'
+            : 'text-ink-500 hover:bg-surface hover:text-ink-800'
+        }`}
+      >
+        <span className="flex-1 min-w-0">{pickLang(cat, 'name', locale)}</span>
+        {depth > 0 && children.length > 0 && !showChildren && <span className="text-ink-300">›</span>}
+      </button>
+      {showChildren && (
+        <div className="ml-3 border-l border-surface-border pl-2 mt-0.5 space-y-0.5">
+          {children.map((child) => (
+            <CategoryNode
+              key={child.id}
+              cat={child}
+              depth={depth + 1}
+              openIds={openIds}
+              selected={selected}
+              onSelect={onSelect}
+              locale={locale}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FilterSidebar({ dict, locale, categories, brands, selectedCategory, currentFilters }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -51,43 +104,25 @@ export default function FilterSidebar({ dict, locale, categories, brands, select
     setMobileOpen(false);
   };
 
+  // Categories can be nested at any depth: main categories always show their
+  // direct subcategories; deeper levels open along the path of the chosen one
+  const openIds = pathTo(categories, currentFilters.category);
+
   const content = (
     <div className="space-y-6">
       <div>
         <h3 className="text-sm font-semibold text-ink-900 mb-3">{dict.filters.category}</h3>
         <div className="space-y-1.5">
           {categories.map((cat) => (
-            <div key={cat.id}>
-              <button
-                onClick={() => updateParam('category', currentFilters.category === cat.slug ? null : cat.slug)}
-                className={`block w-full text-left text-sm px-2.5 py-1.5 rounded-lg transition-colors ${
-                  currentFilters.category === cat.slug
-                    ? 'bg-brand-50 text-brand-600 font-medium'
-                    : 'text-ink-700 hover:bg-surface'
-                }`}
-              >
-                {pickLang(cat, 'name', locale)}
-              </button>
-              {cat.children?.length > 0 && (
-                <div className="ml-3 border-l border-surface-border pl-2 mt-0.5 space-y-0.5">
-                  {cat.children.map((child) => (
-                    <button
-                      key={child.id}
-                      onClick={() =>
-                        updateParam('category', currentFilters.category === child.slug ? null : child.slug)
-                      }
-                      className={`block w-full text-left text-xs px-2.5 py-1 rounded-lg transition-colors ${
-                        currentFilters.category === child.slug
-                          ? 'bg-brand-50 text-brand-600 font-medium'
-                          : 'text-ink-500 hover:bg-surface hover:text-ink-800'
-                      }`}
-                    >
-                      {pickLang(child, 'name', locale)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <CategoryNode
+              key={cat.id}
+              cat={cat}
+              depth={0}
+              openIds={openIds}
+              selected={currentFilters.category}
+              onSelect={(slug) => updateParam('category', currentFilters.category === slug ? null : slug)}
+              locale={locale}
+            />
           ))}
         </div>
       </div>

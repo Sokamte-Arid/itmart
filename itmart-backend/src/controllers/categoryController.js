@@ -3,9 +3,19 @@ const prisma = require('../config/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
-// Two levels only: main categories and their subcategories. A category placed
-// under a SUBcategory (3rd level) is never shown on the shop — these helpers
-// stop that from happening, and give every category a unique web address.
+const {
+  MAX_DEPTH,
+  loadAllCategories,
+  buildTree,
+  descendantIds,
+  ancestorsOf,
+  levelOf,
+  branchHeight,
+} = require('../utils/categoryTree');
+
+// Categories can be nested at any depth up to MAX_DEPTH levels
+// (e.g. Imprimantes > Jet d'encre > A3). These helpers keep the tree valid
+// and give every category a unique web address.
 
 // "printers" → "printers", or "printers-2", "printers-3"... if already taken
 async function uniqueSlug(name, excludeId) {
@@ -17,56 +27,52 @@ async function uniqueSlug(name, excludeId) {
   }
 }
 
+/**
+ * Checks that `parentId` can be the parent of the category `selfId`
+ * (null when creating a new one): the parent exists, isn't the category
+ * itself or one of its own subcategories (that would make a loop), and the
+ * branch doesn't go deeper than MAX_DEPTH levels.
+ */
 async function checkParent(parentId, selfId) {
   if (!parentId) return;
   if (parentId === selfId) throw new ApiError(400, 'Une catégorie ne peut pas être sa propre catégorie parente.');
-  const parent = await prisma.category.findUnique({ where: { id: parentId } });
+  const all = await loadAllCategories();
+  const parent = all.find((c) => c.id === parentId);
   if (!parent) throw new ApiError(400, "La catégorie parente n'existe pas.");
-  if (parent.parentId) {
+
+  if (selfId && descendantIds(all, selfId).includes(parentId)) {
     throw new ApiError(
       400,
-      `« ${parent.nameFr || parent.nameEn} » est déjà une sous-catégorie. Choisissez une catégorie principale comme parent (2 niveaux maximum).`
+      `« ${parent.nameFr || parent.nameEn} » est une sous-catégorie de cette catégorie : elle ne peut pas devenir son parent.`
     );
   }
-  if (selfId) {
-    const childCount = await prisma.category.count({ where: { parentId: selfId } });
-    if (childCount > 0) {
-      throw new ApiError(
-        400,
-        'Cette catégorie a des sous-catégories : elle doit rester une catégorie principale. Déplacez d\'abord ses sous-catégories.'
-      );
-    }
+
+  const height = selfId ? branchHeight(all, selfId) : 1;
+  if (levelOf(all, parentId) + height > MAX_DEPTH) {
+    throw new ApiError(
+      400,
+      `Profondeur maximale atteinte : ${MAX_DEPTH} niveaux de catégories au plus (catégorie principale comprise).`
+    );
   }
 }
 
-// GET /api/categories  (public)
+// GET /api/categories  (public) — main categories with their subcategories
+// nested to every level, each with its characteristics
 const getCategories = asyncHandler(async (req, res) => {
-  const categories = await prisma.category.findMany({
-    include: {
-      children: {
-        include: {
-          attributes: { orderBy: { sortOrder: 'asc' } },
-          // 3rd-level categories (from before this rule existed) — returned so
-          // the admin can see and fix them; the shop doesn't display them.
-          children: true,
-        },
-      },
-      attributes: { orderBy: { sortOrder: 'asc' } },
-    },
-    where: { parentId: null },
-    orderBy: { nameEn: 'asc' },
-  });
-  res.json({ success: true, data: categories });
+  const all = await loadAllCategories({ withAttributes: true });
+  res.json({ success: true, data: buildTree(all) });
 });
 
 // GET /api/categories/:slug  (public)
+// Includes `ancestors` (main category → direct parent) for breadcrumbs.
 const getCategoryBySlug = asyncHandler(async (req, res) => {
   const category = await prisma.category.findUnique({
     where: { slug: req.params.slug },
-    include: { attributes: { orderBy: { sortOrder: 'asc' } }, children: true },
+    include: { attributes: { orderBy: { sortOrder: 'asc' } }, children: { orderBy: { nameEn: 'asc' } } },
   });
   if (!category) throw new ApiError(404, 'Category not found.');
-  res.json({ success: true, data: category });
+  const all = await loadAllCategories();
+  res.json({ success: true, data: { ...category, ancestors: ancestorsOf(all, category) } });
 });
 
 // POST /api/categories  (admin — image is an uploaded file, sent as multipart/form-data)
@@ -116,8 +122,22 @@ const updateCategoryImage = asyncHandler(async (req, res) => {
 });
 
 // DELETE /api/categories/:id  (admin)
+// Its subcategories move up one level (to its own parent) rather than
+// becoming main categories by surprise.
 const deleteCategory = asyncHandler(async (req, res) => {
-  await prisma.category.delete({ where: { id: req.params.id } });
+  const current = await prisma.category.findUnique({ where: { id: req.params.id } });
+  if (!current) throw new ApiError(404, 'Category not found.');
+  const productCount = await prisma.product.count({ where: { categoryId: current.id } });
+  if (productCount > 0) {
+    throw new ApiError(
+      409,
+      `Cette catégorie contient ${productCount} produit(s). Déplacez-les dans une autre catégorie avant de la supprimer.`
+    );
+  }
+  await prisma.$transaction([
+    prisma.category.updateMany({ where: { parentId: current.id }, data: { parentId: current.parentId } }),
+    prisma.category.delete({ where: { id: current.id } }),
+  ]);
   res.json({ success: true, message: 'Category deleted.' });
 });
 

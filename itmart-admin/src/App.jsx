@@ -7,10 +7,8 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
-import ProductList from './pages/products/ProductList';
 import ProductForm from './pages/products/ProductForm';
-import CategoryList from './pages/categories/CategoryList';
-import BrandList from './pages/brands/BrandList';
+import CatalogPage from './pages/catalog/CatalogPage';
 import OrderList from './pages/orders/OrderList';
 import BannerList from './pages/banners/BannerList';
 import AdminsList from './pages/admins/AdminsList';
@@ -44,24 +42,19 @@ const router = createBrowserRouter([
         handle: { titleKey: 'nav.analytics', subtitleKey: 'analytics.subtitle' },
       },
       {
-        path: 'products',
-        element: <ProductList />,
-        handle: { titleKey: 'products.title', subtitleKey: 'products.subtitle' },
+        // Produits / Catégories / Marques, as tabs
+        path: 'catalog/:tab?',
+        element: <CatalogPage />,
+        handle: { titleKey: 'nav.catalog', subtitleKey: 'catalog.subtitle' },
       },
+      // Old addresses (the product edit page stays at /products/:id)
+      { path: 'products', element: <Navigate to="/catalog/products" replace /> },
+      { path: 'categories', element: <Navigate to="/catalog/categories" replace /> },
+      { path: 'brands', element: <Navigate to="/catalog/brands" replace /> },
       {
         path: 'products/:id',
         element: <ProductForm />,
         handle: { titleKey: 'products.title' },
-      },
-      {
-        path: 'categories',
-        element: <CategoryList />,
-        handle: { titleKey: 'categories.title', subtitleKey: 'categories.subtitle' },
-      },
-      {
-        path: 'brands',
-        element: <BrandList />,
-        handle: { titleKey: 'brands.title', subtitleKey: 'brands.subtitle' },
       },
       {
         path: 'banners',

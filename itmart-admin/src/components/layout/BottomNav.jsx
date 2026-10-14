@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, ShoppingBag, Package, BarChart3, Menu } from 'lucide-react';
 
@@ -6,11 +6,12 @@ import { LayoutDashboard, ShoppingBag, Package, BarChart3, Menu } from 'lucide-r
 // most on the go. Everything else is under "Menu".
 export default function BottomNav({ onOpenMenu }) {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
 
   const tabs = [
     { to: '/', label: t('nav.home'), icon: LayoutDashboard, end: true },
     { to: '/orders', label: t('nav.orders'), icon: ShoppingBag },
-    { to: '/products', label: t('nav.products'), icon: Package },
+    { to: '/catalog/products', label: t('nav.catalog'), icon: Package, also: ['/catalog', '/products'] },
     { to: '/analytics', label: t('nav.analytics'), icon: BarChart3 },
   ];
 
@@ -21,21 +22,26 @@ export default function BottomNav({ onOpenMenu }) {
       className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-surface-border flex pb-[env(safe-area-inset-bottom)]"
       aria-label="Main"
     >
-      {tabs.map(({ to, label, icon: Icon, end }) => (
+      {tabs.map(({ to, label, icon: Icon, end, also }) => (
         <NavLink
           key={to}
           to={to}
           end={end}
-          className={({ isActive }) => `${item} ${isActive ? 'text-accent-600' : 'text-ink-500'}`}
+          className={({ isActive }) =>
+            `${item} ${isActive || also?.some((p) => pathname.startsWith(p)) ? 'text-accent-600' : 'text-ink-500'}`
+          }
         >
-          {({ isActive }) => (
+          {({ isActive: exact }) => {
+            const isActive = exact || also?.some((p) => pathname.startsWith(p));
+            return (
             <>
               <span className={`px-4 py-1 rounded-full ${isActive ? 'bg-accent-100' : ''}`}>
                 <Icon size={20} strokeWidth={isActive ? 2.4 : 2} />
               </span>
               <span className="truncate max-w-full">{label}</span>
             </>
-          )}
+            );
+          }}
         </NavLink>
       ))}
       <button onClick={onOpenMenu} className={`${item} text-ink-500`}>

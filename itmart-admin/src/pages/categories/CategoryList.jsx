@@ -80,7 +80,7 @@ export default function CategoryList() {
     }
   };
 
-  // Shared row renderer for both top-level categories and their subcategories.
+  // Shared row renderer for categories at every level (main, sub, sub-sub...).
   // `depth` just controls the left indent + icon so subcategories are visually nested.
   const indent = (depth) =>
     depth > 0 ? { paddingLeft: `calc(var(--row-pad) + ${depth} * var(--row-indent))` } : undefined;
@@ -110,11 +110,6 @@ export default function CategoryList() {
           <p className="text-xs text-ink-500 mt-0.5">
             {cat.attributes?.length || 0} {t('categories.attributes').toLowerCase()}
           </p>
-          {depth >= 2 && (
-            // 3rd level: the shop only shows main categories and their direct
-            // subcategories, so this one is invisible to customers.
-            <p className="text-xs font-medium text-danger-600 mt-1">{t('categories.hiddenThirdLevel')}</p>
-          )}
         </div>
         <button
           onClick={() => setExpanded(expanded === cat.id ? null : cat.id)}

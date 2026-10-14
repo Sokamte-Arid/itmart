@@ -7,6 +7,7 @@ const { notifyLowStock } = require('../utils/push');
 const { stripCostPrice, stripCostPriceFromList } = require('../utils/sanitizeProduct');
 const { normaliseVariants } = require('../utils/variants');
 const { getLowStockThreshold } = require('../utils/storeSettings');
+const { loadAllCategories, descendantIds } = require('../utils/categoryTree');
 
 // What the product cards need to know about variants: whether there are any
 // (the card's cart button then opens the product page to choose) and the
@@ -76,16 +77,13 @@ const getProducts = asyncHandler(async (req, res) => {
   const where = { isActive: true };
 
   if (category) {
-    // If the category has subcategories, browsing it shows products from
-    // the category itself AND all its subcategories combined — only
-    // narrows to one specific subcategory once the customer drills into it.
-    const categoryRecord = await prisma.category.findUnique({
-      where: { slug: category },
-      include: { children: { select: { id: true } } },
-    });
+    // Browsing a category shows its own products AND those of all its
+    // subcategories, at every level below it — it only narrows once the
+    // customer drills into a more precise subcategory.
+    const all = await loadAllCategories();
+    const categoryRecord = all.find((c) => c.slug === category);
     if (categoryRecord) {
-      const categoryIds = [categoryRecord.id, ...categoryRecord.children.map((c) => c.id)];
-      where.categoryId = { in: categoryIds };
+      where.categoryId = { in: descendantIds(all, categoryRecord.id) };
     } else {
       // Unknown slug — fall back to a filter that matches nothing rather
       // than silently ignoring an invalid category and showing everything.

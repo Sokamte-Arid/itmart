@@ -11,6 +11,7 @@ import Badge from '../../components/ui/Badge';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Select } from '../../components/ui/Field';
 import { useToast } from '../../components/ui/Toast';
+import { flattenTree, indentedLabel } from '../../utils/categoryTree';
 
 const formatFCFA = (amount) => `${Number(amount).toLocaleString('fr-FR')} FCFA`;
 
@@ -80,9 +81,9 @@ export default function ProductList() {
           </div>
           <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-32 shrink-0 sm:w-44">
             <option value="">{t('common.category')}: All</option>
-            {categories.map((c) => (
+            {flattenTree(categories).map((c) => (
               <option key={c.id} value={c.slug}>
-                {c.nameEn}
+                {indentedLabel(c)}
               </option>
             ))}
           </Select>

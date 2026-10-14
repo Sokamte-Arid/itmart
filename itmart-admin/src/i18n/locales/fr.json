@@ -15,7 +15,8 @@
     "mobileApp": "Application mobile",
     "settings": "Paramètres",
     "branding": "Identité visuelle",
-    "store": "Boutique & contact"
+    "store": "Boutique & contact",
+    "catalog": "Catalogue"
   },
   "login": {
     "title": "Connexion administrateur",
@@ -155,7 +156,9 @@
     "orderHint": "L'ordre ci-dessous est celui des caractéristiques sur la page produit. Utilisez ↑ ↓ pour le changer.",
     "moveUp": "Monter",
     "moveDown": "Descendre",
-    "hiddenThirdLevel": "⚠ Invisible sur la boutique : placée sous une sous-catégorie. Modifiez-la (✎) et choisissez une catégorie principale comme parent."
+    "parent": "Catégorie parente",
+    "noParent": "— Aucune (catégorie principale) —",
+    "parentHint": "Choisissez n'importe quelle catégorie ou sous-catégorie pour créer un niveau de plus ({{max}} niveaux au maximum)."
   },
   "brands": {
     "title": "Marques",
@@ -488,5 +491,8 @@
         "hint": "Ex. conditions de paiement, coordonnées bancaires ou Mobile Money."
       }
     }
+  },
+  "catalog": {
+    "subtitle": "Produits, catégories et marques"
   }
 }

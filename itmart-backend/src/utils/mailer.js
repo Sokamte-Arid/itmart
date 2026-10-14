@@ -2,6 +2,20 @@ const nodemailer = require('nodemailer');
 
 let transporter = null;
 
+// Text typed by customers (name, address, notes...) is escaped before going
+// into the email's HTML, so it can't add links or formatting to the email.
+const esc = (value) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+// "Product name" + "Noir / Pointure 42" in smaller text when a variant was chosen
+const itemName = (name, variantLabel) =>
+  esc(name) + (variantLabel ? `<br/><span style="color:#666;font-size:12px;">${esc(variantLabel)}</span>` : '');
+
 function getTransporter() {
   if (!transporter) {
     transporter = nodemailer.createTransport({
@@ -33,9 +47,10 @@ async function sendOrderConfirmationEmail(order, items, lang = 'fr') {
     .map(
       (item) =>
         `<tr>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${
-            lang === 'fr' ? item.nameFr || item.nameEn : item.nameEn || item.nameFr
-          }</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;">${itemName(
+            lang === 'fr' ? item.nameFr || item.nameEn : item.nameEn || item.nameFr,
+            item.variantLabel
+          )}</td>
           <td style="padding:8px;border-bottom:1px solid #eee;text-align:center;">${item.quantity}</td>
           <td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">${item.unitPrice} FCFA</td>
         </tr>`
@@ -49,8 +64,8 @@ async function sendOrderConfirmationEmail(order, items, lang = 'fr') {
 
   const intro =
     lang === 'fr'
-      ? `Bonjour ${order.customerName},<br/>Nous avons bien reçu votre commande. Notre équipe vous contactera très bientôt au ${order.phone}.`
-      : `Hello ${order.customerName},<br/>We have received your order. Our team will contact you shortly at ${order.phone}.`;
+      ? `Bonjour ${esc(order.customerName)},<br/>Nous avons bien reçu votre commande. Notre équipe vous contactera très bientôt au ${esc(order.phone)}.`
+      : `Hello ${esc(order.customerName)},<br/>We have received your order. Our team will contact you shortly at ${esc(order.phone)}.`;
 
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
@@ -107,7 +122,7 @@ async function sendAdminOrderNotificationEmail(order, items) {
     .map(
       (item) =>
         `<tr>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${item.nameEn || item.nameFr}</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;">${itemName(item.nameEn || item.nameFr, item.variantLabel)}</td>
           <td style="padding:8px;border-bottom:1px solid #eee;text-align:center;">${item.quantity}</td>
           <td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">${item.unitPrice} FCFA</td>
         </tr>`
@@ -118,11 +133,11 @@ async function sendAdminOrderNotificationEmail(order, items) {
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
       <h2>New order: ${order.reference}</h2>
       <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-        <tr><td style="padding:4px 8px;color:#666;">Customer</td><td style="padding:4px 8px;font-weight:bold;">${order.customerName}</td></tr>
-        <tr><td style="padding:4px 8px;color:#666;">Phone</td><td style="padding:4px 8px;font-weight:bold;">${order.phone}</td></tr>
-        <tr><td style="padding:4px 8px;color:#666;">Email</td><td style="padding:4px 8px;">${order.email || '—'}</td></tr>
-        <tr><td style="padding:4px 8px;color:#666;">Address</td><td style="padding:4px 8px;">${order.address}, ${order.city}</td></tr>
-        ${order.notes ? `<tr><td style="padding:4px 8px;color:#666;">Notes</td><td style="padding:4px 8px;">${order.notes}</td></tr>` : ''}
+        <tr><td style="padding:4px 8px;color:#666;">Customer</td><td style="padding:4px 8px;font-weight:bold;">${esc(order.customerName)}</td></tr>
+        <tr><td style="padding:4px 8px;color:#666;">Phone</td><td style="padding:4px 8px;font-weight:bold;">${esc(order.phone)}</td></tr>
+        <tr><td style="padding:4px 8px;color:#666;">Email</td><td style="padding:4px 8px;">${esc(order.email || '—')}</td></tr>
+        <tr><td style="padding:4px 8px;color:#666;">Address</td><td style="padding:4px 8px;">${esc(order.address)}, ${esc(order.city)}</td></tr>
+        ${order.notes ? `<tr><td style="padding:4px 8px;color:#666;">Notes</td><td style="padding:4px 8px;white-space:pre-line;">${esc(order.notes)}</td></tr>` : ''}
       </table>
       <table style="width:100%;border-collapse:collapse;">
         <thead>

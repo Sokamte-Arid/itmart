@@ -9,7 +9,8 @@ import { fetchSearchSuggestions } from '@/lib/clientApi';
 import { imageUrl } from '@/lib/api';
 import { pickLang } from '@/lib/i18nHelpers';
 
-export default function Header({ dict, locale, categories = [] }) {
+// logoUrl: the shop logo uploaded in the admin (Identité visuelle), if any
+export default function Header({ dict, locale, categories = [], logoUrl = null }) {
   const router = useRouter();
   const { itemCount } = useCart();
   const [query, setQuery] = useState('');
@@ -64,13 +65,25 @@ export default function Header({ dict, locale, categories = [] }) {
     {/* Top bar (logo, search, language, cart): stays pinned at the top */}
     <header className="sticky top-0 z-40 bg-white border-b border-surface-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="h-9 w-9 rounded-lg bg-navy-900 flex items-center justify-center text-white">
-            <Cpu size={18} strokeWidth={2.5} />
-          </div>
-          <span className="font-extrabold text-lg text-navy-900 tracking-tight hidden sm:block">
-            IT Mart
-          </span>
+        <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="IT Mart">
+          {logoUrl ? (
+            // Plain <img>: logos come in any shape, this keeps their proportions
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl(logoUrl)}
+              alt="IT Mart"
+              className="h-9 sm:h-10 w-auto max-w-[120px] sm:max-w-[200px] object-contain"
+            />
+          ) : (
+            <>
+              <div className="h-9 w-9 rounded-lg bg-navy-900 flex items-center justify-center text-white">
+                <Cpu size={18} strokeWidth={2.5} />
+              </div>
+              <span className="font-extrabold text-lg text-navy-900 tracking-tight hidden sm:block">
+                IT Mart
+              </span>
+            </>
+          )}
         </Link>
 
         {/* Search bar */}

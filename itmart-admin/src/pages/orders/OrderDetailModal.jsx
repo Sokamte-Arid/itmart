@@ -140,6 +140,7 @@ export default function OrderDetailModal({ order, onClose, onUpdated }) {
               <div key={item.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                 <div className="min-w-0">
                   <p className="text-ink-900 truncate">{item.product?.nameEn || item.product?.nameFr}</p>
+                  {item.variantLabel && <p className="text-xs font-medium text-accent-600">{item.variantLabel}</p>}
                   <p className="text-ink-500 text-xs">
                     {item.quantity} × {formatFCFA(item.unitPrice)}
                   </p>

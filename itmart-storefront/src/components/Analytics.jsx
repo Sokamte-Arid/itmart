@@ -5,7 +5,8 @@ import Script from 'next/script';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
-  TRACKING,
+  resolveTracking,
+  applyTracking,
   anyTrackerConfigured,
   getConsent,
   setConsent,
@@ -14,10 +15,15 @@ import {
   OPEN_CONSENT_EVENT,
 } from '@/lib/analytics';
 
-// Loads the tracking scripts (only those with an ID in .env, and only after
-// consent when consent is required) and records a page view on every
-// navigation. Rendered once, in the root layout.
-export default function Analytics({ dict }) {
+// Loads the tracking scripts (only those with an ID — entered in the admin,
+// or in .env — and only after consent when consent is required) and records
+// a page view on every navigation. Rendered once, in the root layout.
+// `settings` comes from the backend (GET /api/settings/tracking).
+export default function Analytics({ dict, settings }) {
+  const TRACKING = resolveTracking(settings);
+  // The event helpers (add to cart, purchase...) read the same IDs
+  if (typeof window !== 'undefined') applyTracking(TRACKING);
+
   const [consent, setConsentState] = useState(null);
   const [asked, setAsked] = useState(true); // assume answered until we can read storage
   const [bannerOpen, setBannerOpen] = useState(false);
@@ -41,7 +47,7 @@ export default function Analytics({ dict }) {
     };
   }, []);
 
-  if (!anyTrackerConfigured()) return null;
+  if (!anyTrackerConfigured(TRACKING)) return null;
 
   const enabled = consent === 'granted';
   const showBanner = TRACKING.requireConsent && (!asked || bannerOpen);

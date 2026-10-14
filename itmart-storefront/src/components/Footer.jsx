@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import CookieSettingsLink from './CookieSettingsLink';
+import { imageUrl } from '@/lib/api';
 import { Cpu, Phone, Mail, Truck, ShieldCheck, MessageCircle, Wallet, HelpCircle, MapPin, PackageCheck } from 'lucide-react';
 
 const CITIES = ['Yaoundé', 'Douala', 'Bafoussam', 'Bamenda', 'Garoua', 'Maroua'];
@@ -24,7 +25,8 @@ function InstagramIcon(props) {
   );
 }
 
-export default function Footer({ dict }) {
+// logoUrl: the shop logo uploaded in the admin (Identité visuelle), if any
+export default function Footer({ dict, logoUrl = null }) {
   const phone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '+237 6XX XXX XXX';
   const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'contact@itmart.cm';
   const facebookUrl = process.env.NEXT_PUBLIC_FACEBOOK_URL;
@@ -98,12 +100,20 @@ export default function Footer({ dict }) {
           logo+tagline+socials on the left, link columns on the right. */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
         <div>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-8 w-8 rounded-lg bg-brand-500 flex items-center justify-center text-white">
-              <Cpu size={16} strokeWidth={2.5} />
+          {logoUrl ? (
+            // On a white card, so a dark logo stays visible on the dark footer
+            <div className="inline-flex items-center rounded-xl bg-white px-3 py-2 mb-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={imageUrl(logoUrl)} alt="IT Mart" className="h-9 w-auto max-w-[180px] object-contain" />
             </div>
-            <span className="font-extrabold text-lg text-white">IT Mart</span>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-8 w-8 rounded-lg bg-brand-500 flex items-center justify-center text-white">
+                <Cpu size={16} strokeWidth={2.5} />
+              </div>
+              <span className="font-extrabold text-lg text-white">IT Mart</span>
+            </div>
+          )}
           <p className="text-sm text-white/70 max-w-xs mb-5">{dict.footer.about}</p>
 
           {socialLinks.length > 0 && (

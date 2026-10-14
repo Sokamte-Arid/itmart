@@ -20,7 +20,7 @@ function buildOrderWhatsAppLink(order, items, lang = 'fr') {
     lines.push('');
     lines.push('Articles:');
     items.forEach((item) => {
-      lines.push(`- ${item.nameFr || item.nameEn} x${item.quantity} : ${item.unitPrice} FCFA`);
+      lines.push(`- ${item.nameFr || item.nameEn}${item.variantLabel ? ` (${item.variantLabel})` : ''} x${item.quantity} : ${item.unitPrice} FCFA`);
     });
     lines.push('');
     lines.push(`Sous-total: ${subtotal} FCFA`);
@@ -35,7 +35,7 @@ function buildOrderWhatsAppLink(order, items, lang = 'fr') {
     lines.push('');
     lines.push('Items:');
     items.forEach((item) => {
-      lines.push(`- ${item.nameEn || item.nameFr} x${item.quantity}: ${item.unitPrice} FCFA`);
+      lines.push(`- ${item.nameEn || item.nameFr}${item.variantLabel ? ` (${item.variantLabel})` : ''} x${item.quantity}: ${item.unitPrice} FCFA`);
     });
     lines.push('');
     lines.push(`Subtotal: ${subtotal} FCFA`);

@@ -6,9 +6,10 @@ import FloatingEmailButton from '@/components/FloatingEmailButton';
 import Analytics from '@/components/Analytics';
 import ScrollReveal from '@/components/ScrollReveal';
 import { getDictionary } from '@/lib/i18n';
-import { getCategories } from '@/lib/api';
+import { getCategories, getTrackingSettings, getBranding, imageUrl } from '@/lib/api';
+import { brandingCss, safeBrandingImage } from '@/lib/theme';
 
-export const metadata = {
+const baseMetadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: {
     default: 'IT Mart — IT Equipment in Cameroon',
@@ -23,9 +24,29 @@ export const metadata = {
   },
 };
 
+// The shop's icon (admin → Identité visuelle) in the browser tab and on
+// phone home screens, when one has been uploaded.
+export async function generateMetadata() {
+  const branding = await getBranding();
+  const icon = safeBrandingImage(branding?.iconUrl);
+  if (!icon) return baseMetadata;
+  return { ...baseMetadata, icons: { icon: imageUrl(icon), apple: imageUrl(icon) } };
+}
+
+export async function generateViewport() {
+  const branding = await getBranding();
+  return { themeColor: /^#[0-9a-fA-F]{6}$/.test(branding?.darkColor || '') ? branding.darkColor : '#1e2436' };
+}
+
 export default async function RootLayout({ children }) {
   const { locale, t } = await getDictionary();
-  const categories = await getCategories();
+  const [categories, trackingSettings, branding] = await Promise.all([
+    getCategories(),
+    getTrackingSettings(),
+    getBranding(),
+  ]);
+  const themeCss = brandingCss(branding);
+  const logoUrl = safeBrandingImage(branding?.logoUrl);
 
   return (
     <html lang={locale} className="h-full antialiased">
@@ -37,16 +58,18 @@ export default async function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
+        {/* Shop colours chosen in the admin (only #RRGGBB values, see lib/theme.js) */}
+        {themeCss && <style id="brand-theme" dangerouslySetInnerHTML={{ __html: themeCss }} />}
       </head>
       <body className="min-h-full flex flex-col">
         <CartProvider>
-          <Header dict={t} locale={locale} categories={categories} />
+          <Header dict={t} locale={locale} categories={categories} logoUrl={logoUrl} />
           <main className="flex-1">{children}</main>
-          <Footer dict={t} />
+          <Footer dict={t} logoUrl={logoUrl} />
           <FloatingEmailButton label={t.footer.emailUs} />
         </CartProvider>
-        {/* Facebook Pixel / Google tag / Clarity — each only if its ID is set in .env */}
-        <Analytics dict={t} />
+        {/* Facebook Pixel / Google tag / Clarity — IDs entered in the admin (Suivi & publicité) */}
+        <Analytics dict={t} settings={trackingSettings} />
         {/* Sections and product cards fade in as you scroll */}
         <ScrollReveal />
       </body>

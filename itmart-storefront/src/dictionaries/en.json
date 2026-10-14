@@ -30,7 +30,13 @@
     "otherConfigurations": "Other configurations",
     "completeYourPurchase": "Complete your purchase",
     "relatedProducts": "You may also like",
-    "sku": "SKU"
+    "sku": "SKU",
+    "color": "Colour",
+    "size": "Size",
+    "chooseOne": "choose",
+    "chooseOption": "Choose your {option}",
+    "chooseOptions": "Choose colour / size",
+    "onlyLeft": "Only {count} left"
   },
   "filters": {
     "title": "Filters",

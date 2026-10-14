@@ -7,6 +7,7 @@ const orderRoutes = require('./orderRoutes');
 const bannerRoutes = require('./bannerRoutes');
 const deliveryZoneRoutes = require('./deliveryZoneRoutes');
 const pushRoutes = require('./pushRoutes');
+const settingsRoutes = require('./settingsRoutes');
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use('/orders', orderRoutes);
 router.use('/banners', bannerRoutes);
 router.use('/delivery-zones', deliveryZoneRoutes);
 router.use('/push', pushRoutes);
+router.use('/settings', settingsRoutes);
 
 module.exports = router;

@@ -7,21 +7,39 @@ import { imageUrl } from '@/lib/api';
 
 const AUTO_ADVANCE_MS = 4000;
 
-export default function ProductGallery({ images, alt }) {
+// focusImageId: when the customer picks a colour, its photo is shown and the
+// slideshow stops on it.
+export default function ProductGallery({ images, alt, focusImageId = null }) {
   const sorted = [...(images || [])].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(() => {
+    const i = focusImageId ? sorted.findIndex((img) => img.id === focusImageId) : -1;
+    return i === -1 ? 0 : i;
+  });
   const [paused, setPaused] = useState(false);
+  const [pinned, setPinned] = useState(Boolean(focusImageId));
+
+  // Colour changed → show its photo (adjusting state during render, the
+  // React-recommended way to react to a prop change)
+  const [lastFocus, setLastFocus] = useState(focusImageId);
+  if (focusImageId !== lastFocus) {
+    setLastFocus(focusImageId);
+    const i = focusImageId ? sorted.findIndex((img) => img.id === focusImageId) : -1;
+    if (i !== -1) {
+      setActiveIndex(i);
+      setPinned(true);
+    }
+  }
 
   // Auto-advance through the images, like the hero banner — pauses while
   // the customer's mouse is over the image so it doesn't shift under them
   // while they're looking closely.
   useEffect(() => {
-    if (sorted.length < 2 || paused) return;
+    if (sorted.length < 2 || paused || pinned) return;
     const interval = setInterval(() => {
       setActiveIndex((i) => (i + 1) % sorted.length);
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(interval);
-  }, [sorted.length, paused]);
+  }, [sorted.length, paused, pinned]);
 
   if (!sorted.length) {
     return (
@@ -31,7 +49,7 @@ export default function ProductGallery({ images, alt }) {
     );
   }
 
-  const active = sorted[activeIndex];
+  const active = sorted[activeIndex] || sorted[0];
 
   return (
     <div>

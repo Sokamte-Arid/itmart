@@ -91,7 +91,8 @@ export default function TrackOrderPage() {
               <div key={item.id} className="flex justify-between text-sm">
                 <span className="flex items-center gap-1.5 text-ink-700">
                   <Package size={13} className="text-ink-400" />
-                  {locale === 'en' ? item.product?.nameEn : item.product?.nameFr} × {item.quantity}
+                  {locale === 'en' ? item.product?.nameEn : item.product?.nameFr}
+                  {item.variantLabel ? ` (${item.variantLabel})` : ''} × {item.quantity}
                 </span>
                 <span className="text-ink-900 font-medium">
                   {formatFCFA(Number(item.unitPrice) * item.quantity)}

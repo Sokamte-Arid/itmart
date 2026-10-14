@@ -5,6 +5,24 @@ const ApiError = require('../utils/ApiError');
 const { sendLowStockAlertEmail } = require('../utils/mailer');
 const { notifyLowStock } = require('../utils/push');
 const { stripCostPrice, stripCostPriceFromList } = require('../utils/sanitizeProduct');
+const { normaliseVariants } = require('../utils/variants');
+
+// What the product cards need to know about variants: whether there are any
+// (the card's cart button then opens the product page to choose) and the
+// colours, shown as small dots.
+const CARD_VARIANTS = {
+  select: { id: true, colorName: true, colorHex: true, size: true, stock: true },
+  orderBy: { sortOrder: 'asc' },
+};
+
+// Full variant data for the product page and the admin form
+const FULL_VARIANTS = { orderBy: { sortOrder: 'asc' } };
+
+const cleanSizeLabel = (value) => {
+  if (value === undefined || value === null) return null;
+  const text = String(value).trim().replace(/\s+/g, ' ');
+  return text ? text.slice(0, 30) : null;
+};
 
 // Short description: trimmed, empty → null, never longer than the column (200)
 const SHORT_DESCRIPTION_MAX = 200;
@@ -121,6 +139,7 @@ const getProducts = asyncHandler(async (req, res) => {
         images: { orderBy: { sortOrder: 'asc' } },
         brand: true,
         category: true,
+        variants: CARD_VARIANTS,
       },
       orderBy,
       skip,
@@ -145,7 +164,7 @@ const getRandomProducts = asyncHandler(async (req, res) => {
   // fast at catalog sizes this store will realistically have.
   const pool = await prisma.product.findMany({
     where: { isActive: true },
-    include: { images: { orderBy: { sortOrder: 'asc' } }, brand: true, category: true },
+    include: { images: { orderBy: { sortOrder: 'asc' } }, brand: true, category: true, variants: CARD_VARIANTS },
     take: 100,
   });
 
@@ -184,6 +203,7 @@ const getProductBySlug = asyncHandler(async (req, res) => {
     where: { slug: req.params.slug },
     include: {
       images: { orderBy: { sortOrder: 'asc' } },
+      variants: FULL_VARIANTS,
       brand: true,
       category: true,
       // In the order set in the admin (Catégories → characteristics ↑↓)
@@ -192,7 +212,7 @@ const getProductBySlug = asyncHandler(async (req, res) => {
         orderBy: { sortOrder: 'asc' },
         include: {
           relatedProduct: {
-            include: { images: { where: { isPrimary: true }, take: 1 } },
+            include: { images: { where: { isPrimary: true }, take: 1 }, variants: CARD_VARIANTS },
           },
         },
       },
@@ -223,9 +243,11 @@ const getProductBySlug = asyncHandler(async (req, res) => {
   // everything the storefront needs to switch between them instantly on
   // the same page: images, price, stock, and sku — no navigation, no
   // separate page per color, matching a standard variant-swatch UX.
+  // Products with their own variants (colour / size chosen on the page) don't
+  // use the older "one product per colour" swatches.
   let colorVariants = [];
   const colorAttrValue = product.attributeValues.find((av) => av.attribute.type === 'COLOR');
-  if (colorAttrValue) {
+  if (colorAttrValue && product.variants.length === 0) {
     const groupMembers = [product, ...siblings];
     colorVariants = groupMembers
       .map((member) => {
@@ -280,8 +302,10 @@ const getProductById = asyncHandler(async (req, res) => {
     where: { id: req.params.id },
     include: {
       images: { orderBy: { sortOrder: 'asc' } },
+      variants: FULL_VARIANTS,
       brand: true,
       category: true,
+      group: true,
       attributeValues: { include: { attribute: true } },
     },
   });
@@ -312,6 +336,7 @@ const createProduct = asyncHandler(async (req, res) => {
     discountPrice,
     stock,
     isBestSeller,
+    variantSizeLabel,
     attributes, // [{ attributeId, value, hexValue? }]
   } = req.body;
 
@@ -350,6 +375,7 @@ const createProduct = asyncHandler(async (req, res) => {
       costPrice: costPrice || null,
       discountPrice: discountPrice || null,
       stock: stock ?? 0,
+      variantSizeLabel: cleanSizeLabel(variantSizeLabel),
       isBestSeller: !!isBestSeller,
       attributeValues: attributes?.length
         ? {
@@ -387,6 +413,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     stock,
     isBestSeller,
     isActive,
+    variantSizeLabel,
   } = req.body;
 
   const data = {};
@@ -427,13 +454,19 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (price !== undefined) data.price = price;
   if (costPrice !== undefined) data.costPrice = costPrice || null;
   if (discountPrice !== undefined) data.discountPrice = discountPrice || null;
-  if (stock !== undefined) data.stock = stock;
+  if (variantSizeLabel !== undefined) data.variantSizeLabel = cleanSizeLabel(variantSizeLabel);
+  // With variants, the stock is the total of the variants' stock — it's
+  // changed per variant (PUT /:id/variants), never directly.
+  if (stock !== undefined) {
+    const variantCount = await prisma.productVariant.count({ where: { productId: req.params.id } });
+    if (variantCount === 0) data.stock = stock;
+  }
   if (isBestSeller !== undefined) data.isBestSeller = isBestSeller;
   if (isActive !== undefined) data.isActive = isActive;
 
   // Capture stock before the update, so we can tell if this save is what
   // crossed it into low-stock territory (vs. it already being low).
-  const before = stock !== undefined ? await prisma.product.findUnique({ where: { id: req.params.id } }) : null;
+  const before = data.stock !== undefined ? await prisma.product.findUnique({ where: { id: req.params.id } }) : null;
 
   const product = await prisma.product.update({ where: { id: req.params.id }, data });
 
@@ -494,7 +527,11 @@ const deleteProduct = asyncHandler(async (req, res) => {
 const duplicateProduct = asyncHandler(async (req, res) => {
   const source = await prisma.product.findUnique({
     where: { id: req.params.id },
-    include: { attributeValues: true, images: { orderBy: { sortOrder: 'asc' } } },
+    include: {
+      attributeValues: true,
+      images: { orderBy: { sortOrder: 'asc' } },
+      variants: { orderBy: { sortOrder: 'asc' } },
+    },
   });
   if (!source) throw new ApiError(404, 'Product not found.');
 
@@ -520,6 +557,7 @@ const duplicateProduct = asyncHandler(async (req, res) => {
       costPrice: source.costPrice,
       discountPrice: source.discountPrice,
       stock: 0, // a duplicate is a new listing, not the same physical stock — admin sets the real quantity
+      variantSizeLabel: source.variantSizeLabel,
       isBestSeller: false, // best-seller status shouldn't carry over automatically
       isActive: true,
       attributeValues: {
@@ -533,8 +571,25 @@ const duplicateProduct = asyncHandler(async (req, res) => {
         create: source.images.map((img) => ({ url: img.url, isPrimary: img.isPrimary, sortOrder: img.sortOrder })),
       },
     },
-    include: { attributeValues: true, images: true, category: true, brand: true },
+    include: { attributeValues: true, images: { orderBy: { sortOrder: 'asc' } }, category: true, brand: true },
   });
+
+  // Same colours / sizes, stock 0, each colour keeping the matching photo of the copy
+  if (source.variants.length > 0) {
+    const imageMap = Object.fromEntries(source.images.map((img, i) => [img.id, duplicate.images[i]?.id]));
+    await prisma.productVariant.createMany({
+      data: source.variants.map((v) => ({
+        productId: duplicate.id,
+        colorName: v.colorName,
+        colorHex: v.colorHex,
+        size: v.size,
+        sku: null, // references must stay unique
+        stock: 0,
+        imageId: (v.imageId && imageMap[v.imageId]) || null,
+        sortOrder: v.sortOrder,
+      })),
+    });
+  }
 
   res.status(201).json({ success: true, data: duplicate });
 });
@@ -559,6 +614,74 @@ const setProductAttributes = asyncHandler(async (req, res) => {
     include: { attributeValues: { include: { attribute: true } } },
   });
   res.json({ success: true, data: product });
+});
+
+// PUT /api/products/:id/variants  (admin) — replace the full variant list at once
+// body: { variants: [{ id?, colorName?, colorHex?, size?, sku?, stock, imageId? }], lang? }
+// An empty list removes all variants (the product goes back to a single stock).
+const setProductVariants = asyncHandler(async (req, res) => {
+  const lang = req.body.lang === 'en' ? 'en' : 'fr';
+  const product = await prisma.product.findUnique({
+    where: { id: req.params.id },
+    include: { images: { select: { id: true } }, variants: { select: { id: true } } },
+  });
+  if (!product) throw new ApiError(404, 'Product not found.');
+
+  const variants = normaliseVariants(req.body.variants, {
+    ApiError,
+    imageIds: new Set(product.images.map((i) => i.id)),
+    lang,
+  });
+  const existingIds = new Set(product.variants.map((v) => v.id));
+  const keepIds = new Set(variants.filter((v) => v.id && existingIds.has(v.id)).map((v) => v.id));
+
+  let updated;
+  try {
+    updated = await prisma.$transaction(async (tx) => {
+      // Removed variants (past orders keep their colour / size text)
+      await tx.productVariant.deleteMany({ where: { productId: product.id, id: { notIn: [...keepIds] } } });
+
+      for (const { id, ...fields } of variants) {
+        if (id && keepIds.has(id)) {
+          await tx.productVariant.update({ where: { id }, data: fields });
+        } else {
+          await tx.productVariant.create({ data: { ...fields, productId: product.id } });
+        }
+      }
+
+      const data = {};
+      if (variants.length > 0) data.stock = variants.reduce((sum, v) => sum + v.stock, 0);
+      if (req.body.variantSizeLabel !== undefined) data.variantSizeLabel = cleanSizeLabel(req.body.variantSizeLabel);
+      return tx.product.update({
+        where: { id: product.id },
+        data,
+        include: { variants: FULL_VARIANTS },
+      });
+    });
+  } catch (err) {
+    if (err.code === 'P2002') {
+      throw new ApiError(
+        409,
+        lang === 'en'
+          ? 'One of the variant references (SKU) is already used by another product.'
+          : "Une des références (SKU) de variante est déjà utilisée par un autre produit."
+      );
+    }
+    throw err;
+  }
+
+  // Same low-stock alert as a manual stock change
+  const threshold = Number(process.env.LOW_STOCK_THRESHOLD || 5);
+  if (variants.length > 0 && product.stock > threshold && updated.stock <= threshold) {
+    sendLowStockAlertEmail(updated).catch((err) =>
+      console.error('[product] Failed to send low-stock alert email:', err.message)
+    );
+    notifyLowStock(updated).catch((err) =>
+      console.error('[product] Failed to send low-stock push notification:', err.message)
+    );
+  }
+
+  res.json({ success: true, data: updated });
 });
 
 // GET /api/products/:id/related  (admin — current curated related products, for the edit form)
@@ -652,6 +775,7 @@ module.exports = {
   deleteProduct,
   duplicateProduct,
   setProductAttributes,
+  setProductVariants,
   getRelatedProducts,
   setRelatedProducts,
   addProductImages,

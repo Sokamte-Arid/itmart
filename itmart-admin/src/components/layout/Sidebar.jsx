@@ -13,6 +13,8 @@ import {
   Truck,
   X,
   Smartphone,
+  Settings,
+  Palette,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -30,7 +32,15 @@ export default function Sidebar({ mobileOpen, onMobileClose, onOpenMobileApp }) 
     { to: '/delivery-zones', label: t('nav.deliveryZones'), icon: Truck },
     { to: '/orders', label: t('nav.orders'), icon: ShoppingBag },
     // Only Super Admins can manage other admin accounts
-    ...(admin?.role === 'SUPER_ADMIN' ? [{ to: '/admins', label: t('nav.admins'), icon: Users }] : []),
+    ...(admin?.role === 'SUPER_ADMIN'
+      ? [
+          { to: '/admins', label: t('nav.admins'), icon: Users },
+          // Logo and colours of the shop
+          { to: '/branding', label: t('nav.branding'), icon: Palette },
+          // Tracking tools (Facebook Pixel, Google, Clarity)
+          { to: '/settings', label: t('nav.settings'), icon: Settings },
+        ]
+      : []),
   ];
 
   const navLinks = (onLinkClick) => (

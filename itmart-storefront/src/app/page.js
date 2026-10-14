@@ -9,6 +9,7 @@ import DealsSection from '@/components/DealsSection';
 import PromoTilesSection from '@/components/PromoTilesSection';
 import BrandsSection from '@/components/BrandsSection';
 import ShopSidebarLayout from '@/components/ShopSidebarLayout';
+import CategoryCarousels from '@/components/CategoryCarousels';
 
 export default async function HomePage() {
   const { locale, t } = await getDictionary();
@@ -112,6 +113,9 @@ export default async function HomePage() {
 
           {/* Brands showcase — right before the footer */}
           <BrandsSection brands={brands} title={t.home.ourBrands} />
+
+          {/* One sliding row of products per main category (automatic) — last, just before the footer */}
+          <CategoryCarousels categories={categories} dict={t} locale={locale} />
         </ShopSidebarLayout>
       </div>
     </div>

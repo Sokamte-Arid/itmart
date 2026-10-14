@@ -10,6 +10,9 @@ const {
 const { notifyNewOrder, notifyLowStock } = require('../utils/push');
 const { buildInvoicePdf } = require('../utils/invoicePdf');
 const { stripCostPrice, stripCostPriceFromList } = require('../utils/sanitizeProduct');
+const { variantLabel } = require('../utils/variants');
+
+const MAX_QUANTITY_PER_LINE = 999;
 
 const generateReference = () => {
   const random = Math.floor(100000 + Math.random() * 900000);
@@ -21,7 +24,7 @@ const generateReference = () => {
 // ---------------------------------------------------------------------------
 
 // POST /api/orders
-// body: { customerName, phone, email?, address, deliveryZoneId, notes?, items: [{productId, quantity}], lang }
+// body: { customerName, phone, email?, address, deliveryZoneId, notes?, items: [{productId, variantId?, quantity}], lang }
 const createOrder = asyncHandler(async (req, res) => {
   const { customerName, phone, email, address, deliveryZoneId, notes, items, lang = 'fr' } = req.body;
 
@@ -37,32 +40,74 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Please select a valid delivery area.');
   }
 
-  // Fetch current prices/names server-side — never trust prices from the client
-  const productIds = items.map((i) => i.productId);
-  const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
+  // Clean the cart lines: whole quantities only, and the same product +
+  // variant added twice is merged into one line.
+  const lines = new Map();
+  for (const raw of items) {
+    const quantity = Number(raw?.quantity);
+    if (typeof raw?.productId !== 'string' || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY_PER_LINE) {
+      throw new ApiError(400, lang === 'fr' ? 'Un article de la commande est invalide.' : 'An item in the order is invalid.');
+    }
+    const variantId = typeof raw.variantId === 'string' && raw.variantId ? raw.variantId : null;
+    const key = `${raw.productId}|${variantId || ''}`;
+    const line = lines.get(key) || { productId: raw.productId, variantId, quantity: 0 };
+    line.quantity += quantity;
+    lines.set(key, line);
+  }
 
-  if (products.length !== productIds.length) {
-    throw new ApiError(400, 'One or more products in the order could not be found.');
+  // Fetch current prices/names/stock server-side — never trust the client
+  const productIds = [...new Set([...lines.values()].map((l) => l.productId))];
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    include: { variants: true },
+  });
+
+  if (products.length !== productIds.length || products.some((p) => !p.isActive)) {
+    throw new ApiError(
+      400,
+      lang === 'fr'
+        ? "Un ou plusieurs articles de votre panier ne sont plus disponibles."
+        : 'One or more products in the order could not be found.'
+    );
   }
 
   const productMap = Object.fromEntries(products.map((p) => [p.id, p]));
 
+  // Resolve each line's variant: a product with variants needs one chosen
+  // (colour / size), and it must belong to that product.
+  const resolved = [...lines.values()].map((line) => {
+    const product = productMap[line.productId];
+    let variant = null;
+    if (product.variants.length > 0) {
+      variant = product.variants.find((v) => v.id === line.variantId);
+      if (!variant) {
+        const name = lang === 'fr' ? product.nameFr : product.nameEn;
+        throw new ApiError(
+          400,
+          lang === 'fr'
+            ? `Veuillez choisir la couleur / taille de « ${name} » (retirez-le du panier et ajoutez-le à nouveau).`
+            : `Please choose the colour / size of "${name}" (remove it from the cart and add it again).`
+        );
+      }
+    }
+    return { ...line, product, variant };
+  });
+
   // Validate requested quantities against current stock — never trust the
   // client's cart state, since stock may have changed since it was added.
-  const insufficientStock = items
-    .map((i) => {
-      const product = productMap[i.productId];
-      return { product, requested: i.quantity };
-    })
-    .filter(({ product, requested }) => requested > product.stock);
+  const insufficientStock = resolved.filter(
+    ({ product, variant, quantity }) => quantity > (variant ? variant.stock : product.stock)
+  );
 
   if (insufficientStock.length > 0) {
-    const details = insufficientStock.map(({ product, requested }) => ({
+    const details = insufficientStock.map(({ product, variant, quantity }) => ({
       productId: product.id,
+      variantId: variant?.id || null,
+      variantLabel: variantLabel(variant, product.variantSizeLabel, lang),
       nameEn: product.nameEn,
       nameFr: product.nameFr,
-      requested,
-      available: product.stock,
+      requested: quantity,
+      available: variant ? variant.stock : product.stock,
     }));
     throw new ApiError(
       409,
@@ -73,11 +118,14 @@ const createOrder = asyncHandler(async (req, res) => {
     );
   }
 
-  const orderItemsData = items.map((i) => {
-    const product = productMap[i.productId];
-    const unitPrice = product.discountPrice ?? product.price;
-    return { productId: product.id, quantity: i.quantity, unitPrice };
-  });
+  const orderItemsData = resolved.map(({ product, variant, quantity }) => ({
+    productId: product.id,
+    variantId: variant?.id || null,
+    // Stored in French (the shop's main language) — the text never changes afterwards
+    variantLabel: variantLabel(variant, product.variantSizeLabel, 'fr'),
+    quantity,
+    unitPrice: product.discountPrice ?? product.price,
+  }));
 
   const subtotal = orderItemsData.reduce((sum, i) => sum + Number(i.unitPrice) * i.quantity, 0);
   const deliveryFee = Number(deliveryZone.fee);
@@ -103,6 +151,7 @@ const createOrder = asyncHandler(async (req, res) => {
   const itemsForMessage = order.items.map((i) => ({
     nameEn: i.product.nameEn,
     nameFr: i.product.nameFr,
+    variantLabel: i.variantLabel,
     quantity: i.quantity,
     unitPrice: i.unitPrice,
   }));
@@ -219,6 +268,23 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     if (deduct) {
       const missing = [];
       for (const item of current.items) {
+        const baseName = (lang === 'en' ? item.product.nameEn : item.product.nameFr) || item.product.nameEn;
+        const name = item.variantLabel ? `${baseName} (${item.variantLabel})` : baseName;
+
+        // A colour / size: take it from that variant's stock first (the
+        // product's stock is the total of its variants).
+        if (item.variantId) {
+          const vres = await tx.productVariant.updateMany({
+            where: { id: item.variantId, stock: { gte: item.quantity } },
+            data: { stock: { decrement: item.quantity } },
+          });
+          if (vres.count === 0) {
+            const freshVariant = await tx.productVariant.findUnique({ where: { id: item.variantId } });
+            missing.push({ name, requested: item.quantity, available: freshVariant ? freshVariant.stock : 0 });
+            continue;
+          }
+        }
+
         // Conditional decrement: never lets stock go below zero, even if two
         // admins confirm orders for the last unit at the same moment.
         const res = await tx.product.updateMany({
@@ -228,7 +294,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         if (res.count === 0) {
           const fresh = await tx.product.findUnique({ where: { id: item.productId } });
           missing.push({
-            name: (lang === 'en' ? item.product.nameEn : item.product.nameFr) || item.product.nameEn,
+            name,
             requested: item.quantity,
             available: fresh ? fresh.stock : 0,
           });
@@ -263,6 +329,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
           where: { id: item.productId },
           data: { stock: { increment: item.quantity } },
         });
+        // Back into the colour / size it came from (unless that variant was deleted since)
+        if (item.variantId) {
+          await tx.productVariant.updateMany({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
       }
     }
 
@@ -333,7 +406,9 @@ const exportOrdersCsv = asyncHandler(async (req, res) => {
     o.email || '',
     o.address,
     o.city,
-    o.items.map((i) => `${i.product?.nameEn || '—'} x${i.quantity}`).join('; '),
+    o.items
+      .map((i) => `${i.product?.nameEn || '—'}${i.variantLabel ? ` (${i.variantLabel})` : ''} x${i.quantity}`)
+      .join('; '),
     o.deliveryFee,
     o.total,
     o.createdAt.toISOString(),

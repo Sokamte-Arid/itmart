@@ -49,13 +49,12 @@ export default function HeroCarousel({ banners, locale, fallbackTitle, fallbackS
   const ctaText = pickLang(banner, 'ctaText', locale);
 
   return (
-      // Wide frame (2.4:1 on phones, 3:1 on computers — or 5:2 when side tiles
-      // take the right quarter), with height capped to ~45% of the screen so
-      // products are visible below it without scrolling.
+      // ONE fixed shape on every screen — 5:2 (e.g. 1500 × 600 px) — so the
+      // image looks exactly the same on phones and computers. A 5:2 image
+      // fills the frame edge to edge; other shapes are shown whole with
+      // blurred edges filling the gap (never stretched or cut).
       <div
-        className={`relative w-full aspect-[12/5] sm:aspect-[3/1] ${
-          hasSide ? 'lg:aspect-[5/2]' : ''
-        } max-h-[45vh] min-h-[150px] overflow-hidden rounded-2xl bg-navy-900`}
+        className="relative w-full aspect-[5/2] overflow-hidden rounded-2xl bg-navy-900"
       >
         {banners.map((b, i) => {
           const isActive = i === active;

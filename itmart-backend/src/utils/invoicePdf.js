@@ -3,6 +3,7 @@ const path = require('path');
 const PDFDocument = require('pdfkit');
 const sharp = require('sharp');
 const { amountInWords } = require('./amountInWords');
+const { readBranding } = require('./branding');
 
 // ---------------------------------------------------------------------------
 // Builds an invoice / proforma PDF for an order.
@@ -132,7 +133,17 @@ async function loadLogo(logoPath) {
 async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
   const t = T[lang] || T.fr;
   const company = companyFromEnv();
-  const logo = await loadLogo(company.logo);
+  // Logo and colours from the admin (Identité visuelle); the .env logo is a fallback
+  const branding = await readBranding().catch(() => null);
+  const C = {
+    ...COLORS,
+    ...(branding ? { ink: branding.darkColor, accent: branding.primaryColor } : {}),
+  };
+  const logo = await loadLogo(
+    branding?.logoUrl
+      ? path.join(process.env.UPLOAD_DIR || 'uploads', 'branding', path.basename(branding.logoUrl))
+      : company.logo
+  );
   const isProforma = type === 'proforma';
 
   const doc = new PDFDocument({
@@ -158,9 +169,9 @@ async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
     doc.image(logo, L, y, { fit: [140, 60] });
     y += 68;
   }
-  doc.font('Helvetica-Bold').fontSize(14).fillColor(COLORS.ink).text(company.name, L, y, { width: 260 });
+  doc.font('Helvetica-Bold').fontSize(14).fillColor(C.ink).text(company.name, L, y, { width: 260 });
   y = doc.y + 2;
-  doc.font('Helvetica').fontSize(9).fillColor(COLORS.text);
+  doc.font('Helvetica').fontSize(9).fillColor(C.text);
   const companyLines = [
     [company.address, company.city].filter(Boolean).join(', '),
     company.phone && `${t.tel} ${company.phone}`,
@@ -175,13 +186,13 @@ async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
   const companyBottom = y;
 
   const boxX = L + W - 220;
-  doc.font('Helvetica-Bold').fontSize(isProforma ? 16 : 20).fillColor(COLORS.ink);
+  doc.font('Helvetica-Bold').fontSize(isProforma ? 16 : 20).fillColor(C.ink);
   doc.text(isProforma ? t.proforma : t.invoice, boxX, 50, { width: 220, align: 'right' });
-  doc.moveTo(boxX + 140, doc.y + 4).lineTo(R, doc.y + 4).lineWidth(2).strokeColor(COLORS.accent).stroke();
+  doc.moveTo(boxX + 140, doc.y + 4).lineTo(R, doc.y + 4).lineWidth(2).strokeColor(C.accent).stroke();
   let ry = doc.y + 14;
   const infoRow = (label, value) => {
-    doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted).text(label, boxX, ry, { width: 100 });
-    doc.font('Helvetica-Bold').fillColor(COLORS.ink).text(value, boxX + 100, ry, { width: 120, align: 'right' });
+    doc.font('Helvetica').fontSize(9).fillColor(C.muted).text(label, boxX, ry, { width: 100 });
+    doc.font('Helvetica-Bold').fillColor(C.ink).text(value, boxX + 100, ry, { width: 120, align: 'right' });
     ry += 15;
   };
   infoRow(t.number, number);
@@ -201,11 +212,11 @@ async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
     [order.address, order.city].filter(Boolean).join(', '),
   ].filter(Boolean);
   const boxH = 30 + 13 * customerLines.length + 6;
-  doc.roundedRect(L, y, 280, boxH, 6).fillColor(COLORS.zebra).fill();
-  doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted).text(t.billedTo.toUpperCase(), L + 12, y + 10);
-  doc.font('Helvetica-Bold').fontSize(11).fillColor(COLORS.ink).text(order.customerName, L + 12, y + 22, { width: 256 });
+  doc.roundedRect(L, y, 280, boxH, 6).fillColor(C.zebra).fill();
+  doc.font('Helvetica').fontSize(8).fillColor(C.muted).text(t.billedTo.toUpperCase(), L + 12, y + 10);
+  doc.font('Helvetica-Bold').fontSize(11).fillColor(C.ink).text(order.customerName, L + 12, y + 22, { width: 256 });
   let cy = doc.y + 2;
-  doc.font('Helvetica').fontSize(9).fillColor(COLORS.text);
+  doc.font('Helvetica').fontSize(9).fillColor(C.text);
   customerLines.forEach((line) => {
     doc.text(line, L + 12, cy, { width: 256 });
     cy = doc.y + 1;
@@ -224,7 +235,7 @@ async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
   col.amount.x = col.unit.x + col.unit.w;
 
   const drawTableHeader = () => {
-    doc.rect(L, y, W, 24).fillColor(COLORS.ink).fill();
+    doc.rect(L, y, W, 24).fillColor(C.ink).fill();
     doc.font('Helvetica-Bold').fontSize(9).fillColor('#ffffff');
     doc.text(t.item, col.item.x, y + 8, { width: col.item.w });
     doc.text(t.qty, col.qty.x, y + 8, { width: col.qty.w, align: 'center' });
@@ -248,7 +259,8 @@ async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
     const p = i.product || {};
     const name = (lang === 'en' ? p.nameEn || p.nameFr : p.nameFr || p.nameEn) || '—';
     return {
-      name,
+      // The colour / size ordered, e.g. "Chaussure de sport — Noir / Pointure 42"
+      name: i.variantLabel ? `${name} — ${i.variantLabel}` : name,
       sub: p.sku || '',
       qty: i.quantity,
       unit: Number(i.unitPrice),
@@ -265,18 +277,18 @@ async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
     const nameH = doc.heightOfString(row.name, { width: col.item.w - 8 });
     const rowH = Math.max(nameH + (row.sub ? 12 : 0), 12) + 14;
     ensureSpace(rowH);
-    if (idx % 2 === 1) doc.rect(L, y, W, rowH).fillColor(COLORS.zebra).fill();
-    doc.fillColor(COLORS.ink).font('Helvetica').fontSize(9.5).text(row.name, col.item.x, y + 7, { width: col.item.w - 8 });
-    if (row.sub) doc.fontSize(7.5).fillColor(COLORS.muted).text(row.sub, col.item.x, doc.y + 1, { width: col.item.w - 8 });
-    doc.fontSize(9.5).fillColor(COLORS.text);
+    if (idx % 2 === 1) doc.rect(L, y, W, rowH).fillColor(C.zebra).fill();
+    doc.fillColor(C.ink).font('Helvetica').fontSize(9.5).text(row.name, col.item.x, y + 7, { width: col.item.w - 8 });
+    if (row.sub) doc.fontSize(7.5).fillColor(C.muted).text(row.sub, col.item.x, doc.y + 1, { width: col.item.w - 8 });
+    doc.fontSize(9.5).fillColor(C.text);
     doc.text(String(row.qty), col.qty.x, y + 7, { width: col.qty.w, align: 'center' });
     doc.text(money(row.unit), col.unit.x, y + 7, { width: col.unit.w, align: 'right' });
-    doc.font('Helvetica-Bold').fillColor(COLORS.ink).text(money(row.amount), col.amount.x, y + 7, {
+    doc.font('Helvetica-Bold').fillColor(C.ink).text(money(row.amount), col.amount.x, y + 7, {
       width: col.amount.w - 8,
       align: 'right',
     });
     y += rowH;
-    doc.moveTo(L, y).lineTo(R, y).lineWidth(0.5).strokeColor(COLORS.line).stroke();
+    doc.moveTo(L, y).lineTo(R, y).lineWidth(0.5).strokeColor(C.line).stroke();
   });
 
   // ---------------- Totals
@@ -295,11 +307,11 @@ async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
   y += 14;
   const tx = L + W - 250;
   totalLines.forEach(([label, value]) => {
-    doc.font('Helvetica').fontSize(9.5).fillColor(COLORS.text).text(label, tx, y, { width: 140 });
+    doc.font('Helvetica').fontSize(9.5).fillColor(C.text).text(label, tx, y, { width: 140 });
     doc.text(value, tx + 140, y, { width: 102, align: 'right' });
     y += 18;
   });
-  doc.roundedRect(tx - 8, y, 258, 30, 6).fillColor(COLORS.ink).fill();
+  doc.roundedRect(tx - 8, y, 258, 30, 6).fillColor(C.ink).fill();
   doc.font('Helvetica-Bold').fontSize(11).fillColor('#ffffff');
   doc.text(company.vatRate > 0 ? t.totalTTC : t.total, tx, y + 10, { width: 130 });
   doc.text(money(total), tx + 110, y + 10, { width: 132, align: 'right' });
@@ -307,13 +319,13 @@ async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
 
   // ---------------- Amount in words
   const words = `${isProforma ? t.inWordsProforma : t.inWordsInvoice} : ${amountInWords(total, lang)} (${money(total)}) ${t.currencyWords}.`;
-  doc.font('Helvetica-Oblique').fontSize(9).fillColor(COLORS.text);
+  doc.font('Helvetica-Oblique').fontSize(9).fillColor(C.text);
   ensureSpace(doc.heightOfString(words, { width: W }) + 10, false);
   doc.text(words, L, y, { width: W });
   y = doc.y + 12;
 
   if (isProforma) {
-    doc.font('Helvetica').fontSize(8.5).fillColor(COLORS.muted);
+    doc.font('Helvetica').fontSize(8.5).fillColor(C.muted);
     ensureSpace(20, false);
     doc.text(t.proformaNote, L, y, { width: W });
     y = doc.y + 8;
@@ -327,8 +339,8 @@ async function buildInvoicePdf(order, { type, number, issuedAt, lang = 'fr' }) {
     // Writing inside the bottom margin: temporarily lift it so PDFKit doesn't add a page
     const oldBottom = doc.page.margins.bottom;
     doc.page.margins.bottom = 0;
-    doc.moveTo(L, fy - 6).lineTo(R, fy - 6).lineWidth(0.5).strokeColor(COLORS.line).stroke();
-    doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted);
+    doc.moveTo(L, fy - 6).lineTo(R, fy - 6).lineWidth(0.5).strokeColor(C.line).stroke();
+    doc.font('Helvetica').fontSize(8).fillColor(C.muted);
     const legal = [company.name, company.niu && `${t.niu} ${company.niu}`, company.rccm && `${t.rccm} ${company.rccm}`]
       .filter(Boolean)
       .join(' · ');

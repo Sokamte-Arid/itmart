@@ -1,17 +1,27 @@
 # Tracking & ads (Facebook Pixel, Google, Clarity)
 
-The storefront can send visits and sales to three free tools. Each one is
-**off until you paste its ID** into `itmart-storefront/.env`, then restart
-`npm run dev` (or rebuild for production).
+The storefront can send visits and sales to four free tools. You turn them on
+from the **admin → Suivi & publicité** (Super Admin only): paste each tool's
+ID, or the whole code the tool gives you, and the ID is picked out
+automatically. Click **Enregistrer**: the shop uses it within about a minute.
+No code to change, nothing to rebuild.
 
-| Tool | What it's for | Where to find the ID | `.env` line |
-|---|---|---|---|
-| **Meta Pixel** | Facebook & Instagram ads: see which ads bring sales, retarget visitors | business.facebook.com → **Events Manager** → Connect data → Web → Meta Pixel → copy the **Pixel ID** (digits) | `NEXT_PUBLIC_META_PIXEL_ID=` |
-| **Google Analytics 4** | Visitor statistics: how many people, from where, which pages, which products sell | analytics.google.com → Admin → **Data streams** → Web → **Measurement ID** (`G-…`) | `NEXT_PUBLIC_GA_MEASUREMENT_ID=` |
-| **Google Ads** | Count sales coming from your Google ads | ads.google.com → Goals → **Conversions** → New → Website → "Purchase" → set up the tag manually → from `send_to: 'AW-123456789/AbCdEf'` copy both parts | `NEXT_PUBLIC_GOOGLE_ADS_ID=AW-123456789` and `NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL=AbCdEf` |
-| **Microsoft Clarity** | See how visitors move: heatmaps (where they click and scroll) and replays of real visits | clarity.microsoft.com → New project → Settings → Overview → **Project ID** | `NEXT_PUBLIC_CLARITY_PROJECT_ID=` |
+A field left empty means that tool is off.
 
-You can set only the ones you use; the others stay off.
+| Tool | What it's for | Where to find the ID |
+|---|---|---|
+| **Meta Pixel** | Facebook & Instagram ads: see which ads bring sales, retarget visitors | business.facebook.com → **Events Manager** → your Pixel → **Pixel ID** (digits) |
+| **Google Analytics 4** | Visitor statistics: how many people, from where, which pages, which products sell | analytics.google.com → Admin → **Data streams** → Web → **Measurement ID** (`G-…`) |
+| **Google Ads** | Count sales coming from your Google ads | ads.google.com → Goals → **Conversions** → New → Website → "Purchase" → set up the tag manually. Paste the code containing `send_to: 'AW-123456789/AbCdEf'`: both the ID and the label fill in |
+| **Microsoft Clarity** | See how visitors move: heatmaps (where they click and scroll) and replays of real visits | clarity.microsoft.com → New project → Settings → Overview → **Project ID** |
+
+Each ID is checked against that tool's exact format, both in the admin and on
+the server. A wrong value is refused, so no code can be slipped into the shop
+through these fields.
+
+The old `.env` lines (`NEXT_PUBLIC_META_PIXEL_ID`, etc.) still work, but only
+as a fallback for a field left empty in the admin. On the live server, leave
+them empty and manage everything from the admin.
 
 ## What is recorded
 
@@ -39,7 +49,7 @@ cookies"** at the bottom of every page, and the privacy page explains what's
 collected.
 
 To track without asking (for example if your lawyer confirms it isn't
-required), set `NEXT_PUBLIC_REQUIRE_TRACKING_CONSENT=false`. Keep in mind
+required), untick **"Demander l'accord des visiteurs"** in the admin page. Keep in mind
 that Cameroon's personal data protection law (2024) and Meta's and Google's
 own rules generally expect consent for advertising cookies.
 

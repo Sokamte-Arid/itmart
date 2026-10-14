@@ -3,11 +3,54 @@ const prisma = require('../config/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
+// Two levels only: main categories and their subcategories. A category placed
+// under a SUBcategory (3rd level) is never shown on the shop — these helpers
+// stop that from happening, and give every category a unique web address.
+
+// "printers" → "printers", or "printers-2", "printers-3"... if already taken
+async function uniqueSlug(name, excludeId) {
+  const base = slugify(name, { lower: true, strict: true }) || 'category';
+  for (let n = 1; ; n += 1) {
+    const slug = n === 1 ? base : `${base}-${n}`;
+    const taken = await prisma.category.findFirst({ where: { slug, ...(excludeId ? { NOT: { id: excludeId } } : {}) } });
+    if (!taken) return slug;
+  }
+}
+
+async function checkParent(parentId, selfId) {
+  if (!parentId) return;
+  if (parentId === selfId) throw new ApiError(400, 'Une catégorie ne peut pas être sa propre catégorie parente.');
+  const parent = await prisma.category.findUnique({ where: { id: parentId } });
+  if (!parent) throw new ApiError(400, "La catégorie parente n'existe pas.");
+  if (parent.parentId) {
+    throw new ApiError(
+      400,
+      `« ${parent.nameFr || parent.nameEn} » est déjà une sous-catégorie. Choisissez une catégorie principale comme parent (2 niveaux maximum).`
+    );
+  }
+  if (selfId) {
+    const childCount = await prisma.category.count({ where: { parentId: selfId } });
+    if (childCount > 0) {
+      throw new ApiError(
+        400,
+        'Cette catégorie a des sous-catégories : elle doit rester une catégorie principale. Déplacez d\'abord ses sous-catégories.'
+      );
+    }
+  }
+}
+
 // GET /api/categories  (public)
 const getCategories = asyncHandler(async (req, res) => {
   const categories = await prisma.category.findMany({
     include: {
-      children: { include: { attributes: { orderBy: { sortOrder: 'asc' } } } },
+      children: {
+        include: {
+          attributes: { orderBy: { sortOrder: 'asc' } },
+          // 3rd-level categories (from before this rule existed) — returned so
+          // the admin can see and fix them; the shop doesn't display them.
+          children: true,
+        },
+      },
       attributes: { orderBy: { sortOrder: 'asc' } },
     },
     where: { parentId: null },
@@ -31,7 +74,8 @@ const createCategory = asyncHandler(async (req, res) => {
   const { nameEn, nameFr, parentId } = req.body;
   if (!nameEn || !nameFr) throw new ApiError(400, 'nameEn and nameFr are required.');
 
-  const slug = slugify(nameEn, { lower: true, strict: true });
+  await checkParent(parentId || null, null);
+  const slug = await uniqueSlug(nameEn);
   const image = req.file ? `/uploads/categories/${req.file.filename}` : null;
 
   const category = await prisma.category.create({
@@ -44,12 +88,18 @@ const createCategory = asyncHandler(async (req, res) => {
 const updateCategory = asyncHandler(async (req, res) => {
   const { nameEn, nameFr, parentId } = req.body;
   const data = {};
+  const current = await prisma.category.findUnique({ where: { id: req.params.id } });
+  if (!current) throw new ApiError(404, 'Category not found.');
   if (nameEn) {
     data.nameEn = nameEn;
-    data.slug = slugify(nameEn, { lower: true, strict: true });
+    // Only change the web address if the English name really changed
+    if (nameEn !== current.nameEn) data.slug = await uniqueSlug(nameEn, current.id);
   }
   if (nameFr) data.nameFr = nameFr;
-  if (parentId !== undefined) data.parentId = parentId || null;
+  if (parentId !== undefined) {
+    await checkParent(parentId || null, current.id);
+    data.parentId = parentId || null;
+  }
 
   const category = await prisma.category.update({ where: { id: req.params.id }, data });
   res.json({ success: true, data: category });

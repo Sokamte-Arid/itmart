@@ -72,7 +72,7 @@ export default function CheckoutPage() {
       const payload = {
         ...form,
         lang: locale,
-        items: cart.items.map((i) => ({ productId: i.id, quantity: i.quantity })),
+        items: cart.items.map((i) => ({ productId: i.id, variantId: i.variantId || undefined, quantity: i.quantity })),
       };
       const res = await submitOrder(payload);
 
@@ -130,13 +130,16 @@ export default function CheckoutPage() {
                   {locale === 'en' ? 'Insufficient stock:' : 'Stock insuffisant :'}
                 </p>
                 <ul className="list-disc list-inside space-y-0.5">
-                  {stockConflicts.map((c) => (
-                    <li key={c.productId}>
-                      {locale === 'en'
-                        ? `${c.nameEn} — the quantity requested isn't available. Please lower the quantity and try again.`
-                        : `${c.nameFr} — la quantité demandée n'est pas disponible. Veuillez réduire la quantité et réessayer.`}
-                    </li>
-                  ))}
+                  {stockConflicts.map((c) => {
+                    const name = `${locale === 'en' ? c.nameEn : c.nameFr}${c.variantLabel ? ` (${c.variantLabel})` : ''}`;
+                    return (
+                      <li key={`${c.productId}:${c.variantId || ''}`}>
+                        {locale === 'en'
+                          ? `${name} — only ${c.available} left. Please lower the quantity and try again.`
+                          : `${name} — il n'en reste que ${c.available}. Veuillez réduire la quantité et réessayer.`}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </div>
@@ -243,11 +246,14 @@ export default function CheckoutPage() {
               const name = locale === 'en' ? item.nameEn : item.nameFr;
               const unitPrice = item.discountPrice ?? item.price;
               return (
-                <div key={item.id} className="flex justify-between text-sm gap-2">
-                  <span className="text-ink-700 flex items-center gap-1.5 min-w-0">
-                    <ShoppingBag size={13} className="shrink-0 text-ink-400" />
-                    <span className="truncate">
-                      {name} × {item.quantity}
+                <div key={item.key} className="flex justify-between text-sm gap-2">
+                  <span className="text-ink-700 flex items-start gap-1.5 min-w-0">
+                    <ShoppingBag size={13} className="shrink-0 text-ink-400 mt-1" />
+                    <span className="min-w-0">
+                      <span className="block truncate">
+                        {name} × {item.quantity}
+                      </span>
+                      {item.variantLabel && <span className="block text-xs text-ink-500 truncate">{item.variantLabel}</span>}
                     </span>
                   </span>
                   <span className="text-ink-900 font-medium shrink-0">{formatFCFA(unitPrice * item.quantity)}</span>

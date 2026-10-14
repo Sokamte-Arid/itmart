@@ -28,6 +28,10 @@ export const duplicateProduct = (id) =>
 export const setProductAttributes = (id, attributes) =>
   client.put(`/products/${id}/attributes`, { attributes }).then((res) => res.data);
 
+// body: { variants: [...], variantSizeLabel, lang }
+export const setProductVariants = (id, body) =>
+  client.put(`/products/${id}/variants`, body).then((res) => res.data);
+
 export const getRelatedProducts = (id) =>
   client.get(`/products/${id}/related`).then((res) => res.data);
 

@@ -12,7 +12,9 @@
     "logout": "Déconnexion",
     "menu": "Menu",
     "home": "Accueil",
-    "mobileApp": "Application mobile"
+    "mobileApp": "Application mobile",
+    "settings": "Suivi & publicité",
+    "branding": "Identité visuelle"
   },
   "login": {
     "title": "Connexion administrateur",
@@ -129,7 +131,8 @@
     "shortDescriptionEn": "Description courte (Anglais)",
     "shortDescriptionHint": "Affichée sous le nom du produit, avant le prix. 1 à 2 phrases.",
     "shortDescriptionPlaceholderFr": "Ex. Imprimante 3-en-1 Wi-Fi, idéale pour la maison et le bureau.",
-    "shortDescriptionPlaceholderEn": "E.g. 3-in-1 Wi-Fi printer, ideal for home and office."
+    "shortDescriptionPlaceholderEn": "E.g. 3-in-1 Wi-Fi printer, ideal for home and office.",
+    "variantOfHint": "Pour des modèles différents vendus comme produits séparés (ex. 8 Go / 16 Go de RAM) : tapez le même nom de modèle sur chacun. Pour des couleurs ou tailles d'un même produit, utilisez plutôt « Variantes » plus bas."
   },
   "categories": {
     "title": "Catégories",
@@ -150,7 +153,8 @@
     "typeColorHint": "Affichée comme un cercle de couleur cliquable sur le site — les clients choisissent la couleur avant d'ajouter au panier.",
     "orderHint": "L'ordre ci-dessous est celui des caractéristiques sur la page produit. Utilisez ↑ ↓ pour le changer.",
     "moveUp": "Monter",
-    "moveDown": "Descendre"
+    "moveDown": "Descendre",
+    "hiddenThirdLevel": "⚠ Invisible sur la boutique : placée sous une sous-catégorie. Modifiez-la (✎) et choisissez une catégorie principale comme parent."
   },
   "brands": {
     "title": "Marques",
@@ -169,7 +173,7 @@
     "placementDeals": "Tuile \"Offres du jour\"",
     "placementPromo": "Tuile promo / événement",
     "image": "Image de la bannière",
-    "imageHint": "Bannière principale : 1500 × 600 px (format 5:2) si vous avez des tuiles à côté, sinon 1920 × 640 px (3:1). Les autres formats sont affichés en entier, avec des bords flous — rien n'est coupé.",
+    "imageHint": "Bannière principale : 1500 × 600 px (format 5:2). Ce format est le même sur téléphone et ordinateur : une image 5:2 remplit la bannière parfaitement partout. Les autres formats sont affichés en entier, avec des bords flous.",
     "imageRequired": "Une image de bannière est requise.",
     "noTitle": "Aucun titre défini",
     "subtitleEn": "Sous-titre (Anglais)",
@@ -181,7 +185,7 @@
     "activate": "Activer",
     "deactivate": "Désactiver",
     "placementSide": "Tuile à droite de la bannière principale (GIF possible)",
-    "imageHintSide": "Tuile latérale : 600 × 350 px environ. Les GIF animés sont acceptés (5 Mo max) et restent animés. 2 tuiles maximum de chaque côté, dans l'ordre d'affichage.",
+    "imageHintSide": "Tuile latérale : 600 × 350 px environ. Les GIF animés sont acceptés (5 Mo max) et restent animés. Visible uniquement sur ordinateur (masquée sur téléphone). 2 tuiles maximum de chaque côté.",
     "imageHintTile": "Image affichée en entier dans la tuile.",
     "placementSideLeft": "Tuile à gauche de la bannière principale (GIF possible)"
   },
@@ -280,5 +284,110 @@
       "permissionDenied": "Autorisation refusée. Autorisez les notifications pour ce site dans les réglages du navigateur.",
       "generic": "Impossible d'activer les notifications. Réessayez."
     }
+  },
+  "variants": {
+    "title": "Variantes (couleurs / tailles)",
+    "hint": "Pour un même produit disponible en plusieurs couleurs et/ou tailles. Chaque variante a son propre stock ; le client choisit sur la page produit. Laissez vide si le produit n'a qu'une seule version.",
+    "sizeLabel": "Nom de l'option « taille »",
+    "sizeLabelPlaceholder": "Taille, Pointure, Capacité…",
+    "sizeLabelHint": "Affiché au client. Laissez vide pour « Taille ».",
+    "sizeDefault": "Taille",
+    "color": "Couleur",
+    "colorPlaceholder": "ex. Noir",
+    "sizePlaceholder": "ex. 42, XL",
+    "swatch": "Couleur de la pastille",
+    "photo": "Photo",
+    "noPhotos": "Ajoutez d'abord des photos",
+    "sku": "Référence",
+    "skuPlaceholder": "Optionnel",
+    "none": "Aucune variante : le produit est vendu en une seule version, avec le stock indiqué à droite.",
+    "addOne": "Ajouter une variante",
+    "quickAdd": "Ajout rapide",
+    "quickTitle": "Créer toutes les combinaisons",
+    "quickColors": "Couleurs",
+    "addColor": "Ajouter",
+    "quickSizes": "{{label}} (séparées par des virgules)",
+    "quickSizesPlaceholder": "ex. 38, 39, 40, 41, 42",
+    "quickHint": "Une variante est créée pour chaque couleur × chaque taille, avec un stock de 0. Vous remplissez ensuite les quantités.",
+    "generate": "Créer les variantes",
+    "total": "Stock total",
+    "stockFromVariants": "Calculé automatiquement : total du stock des variantes.",
+    "errorEmpty": "Variante {{n}} : indiquez une couleur et/ou une taille."
+  },
+  "settings": {
+    "subtitle": "Facebook Pixel, Google Analytics, Google Ads et Clarity",
+    "trackingIntro": "Collez ici l'identifiant de chaque outil (ou tout le code qu'il vous donne : l'identifiant est repéré automatiquement). Un outil laissé vide est désactivé. Aucune modification de code n'est nécessaire.",
+    "on": "Actif",
+    "off": "Désactivé",
+    "open": "Ouvrir",
+    "extracted": "Identifiant repéré dans le code collé.",
+    "saved": "Réglages enregistrés ✓",
+    "loadError": "Impossible de charger les réglages.",
+    "delayNote": "Les changements apparaissent sur la boutique en moins d'une minute.",
+    "consentLabel": "Demander l'accord des visiteurs (bannière cookies)",
+    "consentHint": "Recommandé. Les outils ne se chargent qu'après que le visiteur a cliqué sur « Accepter ».",
+    "consentWarning": "Sans bannière, les outils se chargent pour tous les visiteurs. La loi camerounaise de 2024 sur les données personnelles, ainsi que Meta et Google, demandent en général l'accord des visiteurs.",
+    "meta": {
+      "label": "Meta Pixel (Facebook / Instagram)",
+      "purpose": "Mesure les ventes venant de vos publicités Facebook et Instagram, et permet de recibler vos visiteurs.",
+      "where": "Gestionnaire d'événements → Sources de données → votre Pixel → ID (chiffres).",
+      "invalid": "L'ID du Pixel ne contient que des chiffres (ex. 1234567890123456)."
+    },
+    "ga": {
+      "label": "Google Analytics 4",
+      "purpose": "Statistiques de visite : nombre de visiteurs, provenance, pages vues, produits vendus.",
+      "where": "Administration → Flux de données → Web → ID de mesure (G-…).",
+      "invalid": "L'ID de mesure commence par G- (ex. G-AB12CD34EF)."
+    },
+    "ads": {
+      "label": "Google Ads — ID",
+      "purpose": "Compte les ventes venant de vos annonces Google.",
+      "where": "Objectifs → Conversions → votre conversion « Achat » → Configurer la balise → « AW-… ».",
+      "invalid": "L'ID Google Ads commence par AW- suivi de chiffres (ex. AW-123456789)."
+    },
+    "adsLabel": {
+      "label": "Google Ads — libellé de conversion « Achat »",
+      "purpose": "La partie après la barre oblique dans send_to: 'AW-123456789/XXXX'. Collez le code de la balise : les deux champs se remplissent seuls.",
+      "where": "Au même endroit que l'ID Google Ads.",
+      "invalid": "Le libellé ne contient que des lettres, chiffres, - et _."
+    },
+    "clarity": {
+      "label": "Microsoft Clarity",
+      "purpose": "Cartes de chaleur et enregistrements des visites : voyez où les visiteurs cliquent et défilent.",
+      "where": "Votre projet → Paramètres → Vue d'ensemble → ID du projet.",
+      "invalid": "L'ID Clarity contient des lettres minuscules et des chiffres (ex. k2x9abc1de)."
+    }
+  },
+  "branding": {
+    "subtitle": "Logo et couleurs de votre boutique",
+    "intro": "Personnalisez la boutique avec votre logo et vos couleurs. Ils s'appliquent à tout le site (boutons, prix, en-tête, pied de page) et aux factures, sans modifier le code.",
+    "logoTitle": "Logo",
+    "logo": "Logo principal",
+    "logoHint": "Affiché en haut du site, en bas de page et sur les factures. PNG à fond transparent recommandé, format horizontal (3 Mo max).",
+    "icon": "Icône (onglet du navigateur)",
+    "iconHint": "Petite image carrée : onglet du navigateur et raccourci sur l'écran d'accueil des téléphones. Idéalement le symbole de votre logo, sans texte.",
+    "none": "Aucun",
+    "upload": "Téléverser",
+    "replace": "Remplacer",
+    "tooBig": "Image trop lourde (3 Mo maximum).",
+    "saved": "Enregistré ✓",
+    "colorsTitle": "Couleurs",
+    "presets": "Palettes toutes prêtes",
+    "primary": "Couleur principale",
+    "primaryHint": "Boutons d'action, prix, promotions, liens.",
+    "dark": "Couleur foncée",
+    "darkHint": "Bouton « Acheter », titres, bandeaux et pied de page. Choisissez une couleur sombre.",
+    "lowContrastPrimary": "Couleur principale très claire : le texte blanc sur les boutons sera difficile à lire. Choisissez une teinte plus soutenue.",
+    "lowContrastDark": "Couleur foncée trop claire : les titres et le texte blanc des bandeaux seront peu lisibles. Choisissez une teinte plus sombre.",
+    "saveColors": "Enregistrer les couleurs",
+    "reset": "Couleurs d'origine",
+    "preview": "Aperçu",
+    "previewSearch": "Rechercher…",
+    "previewBanner": "Nouvelle collection",
+    "previewShop": "Voir les offres",
+    "previewProduct": "Produit",
+    "previewBuy": "Acheter",
+    "previewNote": "Livraison partout au Cameroun",
+    "previewFooter": "© Votre boutique"
   }
 }

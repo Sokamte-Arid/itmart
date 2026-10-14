@@ -12,7 +12,9 @@
     "logout": "Log out",
     "menu": "Menu",
     "home": "Home",
-    "mobileApp": "Mobile app"
+    "mobileApp": "Mobile app",
+    "settings": "Tracking & ads",
+    "branding": "Branding"
   },
   "login": {
     "title": "Admin login",
@@ -129,7 +131,8 @@
     "shortDescriptionEn": "Short description (English)",
     "shortDescriptionHint": "Shown under the product name, before the price. 1–2 sentences.",
     "shortDescriptionPlaceholderFr": "Ex. Imprimante 3-en-1 Wi-Fi, idéale pour la maison et le bureau.",
-    "shortDescriptionPlaceholderEn": "E.g. 3-in-1 Wi-Fi printer, ideal for home and office."
+    "shortDescriptionPlaceholderEn": "E.g. 3-in-1 Wi-Fi printer, ideal for home and office.",
+    "variantOfHint": "For different models sold as separate products (e.g. 8 GB / 16 GB RAM): type the same model name on each. For colours or sizes of one product, use \"Variants\" below instead."
   },
   "categories": {
     "title": "Categories",
@@ -150,7 +153,8 @@
     "typeColorHint": "Shown as a clickable color circle on the storefront — customers pick the color before adding to cart.",
     "orderHint": "This is the order the characteristics appear in on the product page. Use ↑ ↓ to change it.",
     "moveUp": "Move up",
-    "moveDown": "Move down"
+    "moveDown": "Move down",
+    "hiddenThirdLevel": "⚠ Not visible on the shop: it sits under a subcategory. Edit it (✎) and choose a main category as its parent."
   },
   "brands": {
     "title": "Brands",
@@ -169,7 +173,7 @@
     "placementDeals": "\"Deals of the day\" tile",
     "placementPromo": "Promo / event tile",
     "image": "Banner image",
-    "imageHint": "Main banner: 1500 × 600 px (5:2) if you have side tiles, otherwise 1920 × 640 px (3:1). Other shapes are shown in full, with blurred edges — nothing is cropped.",
+    "imageHint": "Main banner: 1500 × 600 px (5:2). This shape is the same on phones and computers: a 5:2 image fills the banner perfectly everywhere. Other shapes are shown in full, with blurred edges.",
     "imageRequired": "A banner image is required.",
     "noTitle": "No title set",
     "subtitleEn": "Subtitle (English)",
@@ -181,7 +185,7 @@
     "activate": "Activate",
     "deactivate": "Deactivate",
     "placementSide": "Tile to the right of the main banner (GIF allowed)",
-    "imageHintSide": "Side tile: about 600 × 350 px. Animated GIFs are accepted (5 MB max) and stay animated. Up to 2 tiles per side, in display order.",
+    "imageHintSide": "Side tile: about 600 × 350 px. Animated GIFs are accepted (5 MB max) and stay animated. Shown on computers only (hidden on phones). Up to 2 tiles per side.",
     "imageHintTile": "The image is shown in full inside the tile.",
     "placementSideLeft": "Tile to the left of the main banner (GIF allowed)"
   },
@@ -280,5 +284,110 @@
       "permissionDenied": "Permission refused. Allow notifications for this site in your browser settings.",
       "generic": "Couldn't turn on notifications. Please try again."
     }
+  },
+  "variants": {
+    "title": "Variants (colours / sizes)",
+    "hint": "For one product available in several colours and/or sizes. Each variant has its own stock; the customer chooses on the product page. Leave empty if the product only comes in one version.",
+    "sizeLabel": "Name of the \"size\" option",
+    "sizeLabelPlaceholder": "Size, Shoe size, Capacity…",
+    "sizeLabelHint": "Shown to customers. Leave empty for \"Size\".",
+    "sizeDefault": "Size",
+    "color": "Colour",
+    "colorPlaceholder": "e.g. Black",
+    "sizePlaceholder": "e.g. 42, XL",
+    "swatch": "Swatch colour",
+    "photo": "Photo",
+    "noPhotos": "Add photos first",
+    "sku": "Reference",
+    "skuPlaceholder": "Optional",
+    "none": "No variants: the product is sold in a single version, with the stock shown on the right.",
+    "addOne": "Add a variant",
+    "quickAdd": "Quick add",
+    "quickTitle": "Create every combination",
+    "quickColors": "Colours",
+    "addColor": "Add",
+    "quickSizes": "{{label}} (comma separated)",
+    "quickSizesPlaceholder": "e.g. 38, 39, 40, 41, 42",
+    "quickHint": "One variant is created for each colour × each size, with a stock of 0. You then fill in the quantities.",
+    "generate": "Create variants",
+    "total": "Total stock",
+    "stockFromVariants": "Worked out automatically: total of the variants' stock.",
+    "errorEmpty": "Variant {{n}}: enter a colour and/or a size."
+  },
+  "settings": {
+    "subtitle": "Facebook Pixel, Google Analytics, Google Ads and Clarity",
+    "trackingIntro": "Paste each tool's ID here (or the whole code it gives you: the ID is picked out automatically). A tool left empty is off. No code changes needed.",
+    "on": "On",
+    "off": "Off",
+    "open": "Open",
+    "extracted": "ID picked out of the pasted code.",
+    "saved": "Settings saved ✓",
+    "loadError": "Could not load the settings.",
+    "delayNote": "Changes show on the shop within a minute.",
+    "consentLabel": "Ask visitors for consent (cookie banner)",
+    "consentHint": "Recommended. The tools only load after the visitor clicks \"Accept\".",
+    "consentWarning": "Without the banner the tools load for every visitor. Cameroon's 2024 personal data law, and Meta's and Google's rules, generally expect visitor consent.",
+    "meta": {
+      "label": "Meta Pixel (Facebook / Instagram)",
+      "purpose": "Measures sales coming from your Facebook and Instagram ads, and lets you retarget visitors.",
+      "where": "Events Manager → Data sources → your Pixel → ID (digits).",
+      "invalid": "The Pixel ID contains digits only (e.g. 1234567890123456)."
+    },
+    "ga": {
+      "label": "Google Analytics 4",
+      "purpose": "Visit statistics: how many visitors, where from, pages viewed, products sold.",
+      "where": "Admin → Data streams → Web → Measurement ID (G-…).",
+      "invalid": "The measurement ID starts with G- (e.g. G-AB12CD34EF)."
+    },
+    "ads": {
+      "label": "Google Ads — ID",
+      "purpose": "Counts sales coming from your Google ads.",
+      "where": "Goals → Conversions → your \"Purchase\" conversion → Set up the tag → \"AW-…\".",
+      "invalid": "The Google Ads ID starts with AW- followed by digits (e.g. AW-123456789)."
+    },
+    "adsLabel": {
+      "label": "Google Ads — \"Purchase\" conversion label",
+      "purpose": "The part after the slash in send_to: 'AW-123456789/XXXX'. Paste the tag code: both fields fill in by themselves.",
+      "where": "Same place as the Google Ads ID.",
+      "invalid": "The label only contains letters, digits, - and _."
+    },
+    "clarity": {
+      "label": "Microsoft Clarity",
+      "purpose": "Heatmaps and recordings of visits: see where visitors click and scroll.",
+      "where": "Your project → Settings → Overview → Project ID.",
+      "invalid": "The Clarity ID contains lowercase letters and digits (e.g. k2x9abc1de)."
+    }
+  },
+  "branding": {
+    "subtitle": "Your shop's logo and colours",
+    "intro": "Make the shop yours with your logo and colours. They apply to the whole site (buttons, prices, header, footer) and to invoices, with no code changes.",
+    "logoTitle": "Logo",
+    "logo": "Main logo",
+    "logoHint": "Shown at the top of the site, in the footer and on invoices. A transparent PNG in landscape format works best (3 MB max).",
+    "icon": "Icon (browser tab)",
+    "iconHint": "Small square image: browser tab and phone home-screen shortcut. Ideally your logo's symbol, without text.",
+    "none": "None",
+    "upload": "Upload",
+    "replace": "Replace",
+    "tooBig": "Image too large (3 MB maximum).",
+    "saved": "Saved ✓",
+    "colorsTitle": "Colours",
+    "presets": "Ready-made palettes",
+    "primary": "Main colour",
+    "primaryHint": "Action buttons, prices, discounts, links.",
+    "dark": "Dark colour",
+    "darkHint": "\"Buy\" button, titles, banners and footer. Pick a dark shade.",
+    "lowContrastPrimary": "Very light main colour: white text on buttons will be hard to read. Pick a stronger shade.",
+    "lowContrastDark": "Dark colour too light: titles and white text on banners will be hard to read. Pick a darker shade.",
+    "saveColors": "Save colours",
+    "reset": "Original colours",
+    "preview": "Preview",
+    "previewSearch": "Search…",
+    "previewBanner": "New collection",
+    "previewShop": "See the deals",
+    "previewProduct": "Product",
+    "previewBuy": "Buy",
+    "previewNote": "Delivery across Cameroon",
+    "previewFooter": "© Your shop"
   }
 }

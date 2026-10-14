@@ -4,11 +4,13 @@
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
 
   /* Trust / navigation */
-  --color-navy-950: #3b0764;
-  --color-navy-900: #581c87;
-  --color-navy-800: #6b21a8;
-  --color-navy-700: #7e22ce;
-  --color-navy-500: #a855f7;
+  --color-navy-950: #12151f;
+  --color-navy-900: #1e2436;
+  --color-navy-800: #2a3149;
+  --color-navy-700: #3a4262;
+  --color-navy-500: #6b7394;
+  --color-navy-300: #b4b9cc;
+  --color-navy-100: #e4e6ee;
 
   /* CTA / discounts / energy */
   --color-brand-600: #e85a2a;

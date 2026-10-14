@@ -77,6 +77,18 @@ export async function getBanners(placement) {
   return res?.data || [];
 }
 
+// Tracking IDs entered in the admin (Suivi & publicité) — null if unreachable
+export async function getTrackingSettings() {
+  const res = await apiFetch('/settings/tracking', { revalidate: 60 });
+  return res?.data || null;
+}
+
+// Logo + colours entered in the admin (Identité visuelle) — null if unreachable
+export async function getBranding() {
+  const res = await apiFetch('/settings/branding', { revalidate: 60 });
+  return res?.data || null;
+}
+
 export const API_ORIGIN = process.env.NEXT_PUBLIC_API_ORIGIN || 'http://localhost:5000';
 
 export function imageUrl(path) {

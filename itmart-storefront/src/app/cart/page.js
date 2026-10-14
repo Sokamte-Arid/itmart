@@ -41,7 +41,7 @@ export default function CartPage() {
           const name = locale === 'en' ? item.nameEn : item.nameFr;
           const unitPrice = item.discountPrice ?? item.price;
           return (
-            <div key={item.id} className="flex items-center gap-4 p-4">
+            <div key={item.key} className="flex items-center gap-4 p-4">
               <div className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-surface border border-surface-border">
                 {item.image ? (
                   <Image src={imageUrl(item.image)} alt={name} fill sizes="64px" className="object-cover" />
@@ -54,12 +54,13 @@ export default function CartPage() {
 
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ink-900 truncate">{name}</p>
+                {item.variantLabel && <p className="text-xs text-ink-500 truncate">{item.variantLabel}</p>}
                 <p className="text-sm text-ink-500">{formatFCFA(unitPrice)}</p>
               </div>
 
               <div className="flex items-center border border-surface-border rounded-lg shrink-0">
                 <button
-                  onClick={() => cart.updateQuantity(item.id, item.quantity - 1)}
+                  onClick={() => cart.updateQuantity(item.key, item.quantity - 1)}
                   className="h-8 w-8 flex items-center justify-center text-ink-700 hover:bg-surface"
                   aria-label={t.cart.quantity}
                 >
@@ -67,7 +68,7 @@ export default function CartPage() {
                 </button>
                 <span className="w-8 text-center text-sm">{item.quantity}</span>
                 <button
-                  onClick={() => cart.updateQuantity(item.id, Math.min(item.stock || 99, item.quantity + 1))}
+                  onClick={() => cart.updateQuantity(item.key, Math.min(item.stock || 99, item.quantity + 1))}
                   className="h-8 w-8 flex items-center justify-center text-ink-700 hover:bg-surface"
                   aria-label={t.cart.quantity}
                 >
@@ -80,7 +81,7 @@ export default function CartPage() {
               </p>
 
               <button
-                onClick={() => cart.removeItem(item.id)}
+                onClick={() => cart.removeItem(item.key)}
                 className="shrink-0 text-ink-400 hover:text-danger-600 p-1.5"
                 aria-label={t.cart.remove}
               >

@@ -6,6 +6,7 @@ import * as productsApi from '../../api/products';
 import * as categoriesApi from '../../api/categories';
 import * as brandsApi from '../../api/brands';
 import RelatedProductsPicker from './RelatedProductsPicker';
+import VariantsEditor, { newVariantKey } from './VariantsEditor';
 import { API_ORIGIN } from '../../api/client';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -27,12 +28,13 @@ const emptyForm = {
   costPrice: '',
   discountPrice: '',
   stock: '0',
+  variantSizeLabel: '',
   isBestSeller: false,
   isActive: true,
 };
 
 export default function ProductForm() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = id && id !== 'new';
@@ -46,6 +48,8 @@ export default function ProductForm() {
   const [attributeValues, setAttributeValues] = useState({});
   const [images, setImages] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  // Colours / sizes, each with its own stock (see VariantsEditor)
+  const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [productId, setProductId] = useState(isEdit ? id : null);
@@ -62,6 +66,23 @@ export default function ProductForm() {
   // not always from the normal price, or it would be wrong for any product
   // currently on sale.
   const effectivePrice = form.discountPrice ? Number(form.discountPrice) : Number(form.price);
+
+  // With variants, the stock is the total of the variants' stock
+  const hasVariants = variants.length > 0;
+  const variantsTotal = variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+
+  // Server rows → editor rows (keeps the id so a save updates them in place)
+  const toRows = (list = []) =>
+    list.map((v) => ({
+      key: v.id || newVariantKey(),
+      id: v.id,
+      colorName: v.colorName || '',
+      colorHex: v.colorHex || '#000000',
+      size: v.size || '',
+      sku: v.sku || '',
+      stock: String(v.stock ?? 0),
+      imageId: v.imageId || '',
+    }));
 
   useEffect(() => {
     categoriesApi.getCategories().then((res) => setCategories(res.data));
@@ -87,6 +108,7 @@ export default function ProductForm() {
         discountPrice: p.discountPrice ? String(p.discountPrice) : '',
         costPrice: p.costPrice ? String(p.costPrice) : '',
         stock: String(p.stock),
+        variantSizeLabel: p.variantSizeLabel || '',
         isBestSeller: p.isBestSeller,
         isActive: p.isActive,
       });
@@ -100,6 +122,7 @@ export default function ProductForm() {
       });
       setAttributeValues(attrMap);
       setImages(p.images || []);
+      setVariants(toRows(p.variants));
       productsApi.getRelatedProducts(id).then((res) => setRelatedProducts(res.data));
       setLoading(false);
     });
@@ -107,6 +130,14 @@ export default function ProductForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Every variant needs at least a colour or a size
+    const emptyIndex = variants.findIndex((v) => !v.colorName.trim() && !v.size.trim());
+    if (emptyIndex !== -1) {
+      showToast(t('variants.errorEmpty', { n: emptyIndex + 1 }), 'error');
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -114,9 +145,11 @@ export default function ProductForm() {
         price: Number(form.price),
         discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
         costPrice: form.costPrice ? Number(form.costPrice) : null,
-        stock: Number(form.stock),
         brandId: form.brandId || null,
       };
+      // With variants the server works out the total itself
+      if (hasVariants) delete payload.stock;
+      else payload.stock = Number(form.stock);
 
       let savedId = productId;
       if (isEdit) {
@@ -144,6 +177,23 @@ export default function ProductForm() {
       if (selectedCategory?.attributes?.length) {
         await productsApi.setProductAttributes(savedId, attrPayload);
       }
+
+      // Colours / sizes (an empty list removes them)
+      const variantsRes = await productsApi.setProductVariants(savedId, {
+        variantSizeLabel: form.variantSizeLabel,
+        lang: i18n.language?.startsWith('en') ? 'en' : 'fr',
+        variants: variants.map((v) => ({
+          id: v.id,
+          colorName: v.colorName,
+          colorHex: v.colorHex,
+          size: v.size,
+          sku: v.sku,
+          stock: Number(v.stock) || 0,
+          imageId: v.imageId || null,
+        })),
+      });
+      setVariants(toRows(variantsRes.data.variants));
+      if (variantsRes.data.variants.length > 0) setForm((f) => ({ ...f, stock: String(variantsRes.data.stock) }));
 
       await productsApi.setRelatedProducts(
         savedId,
@@ -185,6 +235,8 @@ export default function ProductForm() {
     try {
       await productsApi.deleteProductImage(imageId);
       setImages((prev) => prev.filter((img) => img.id !== imageId));
+      // A colour that used this photo no longer has one
+      setVariants((prev) => prev.map((v) => (v.imageId === imageId ? { ...v, imageId: '' } : v)));
     } catch (err) {
       showToast(err.response?.data?.message || 'Error', 'error');
     }
@@ -397,6 +449,17 @@ export default function ProductForm() {
           </Card>
 
           <Card>
+            <h2 className="font-semibold text-ink-900 mb-1">{t('variants.title')}</h2>
+            <VariantsEditor
+              variants={variants}
+              onChange={setVariants}
+              sizeLabel={form.variantSizeLabel}
+              onSizeLabelChange={(value) => setForm((f) => ({ ...f, variantSizeLabel: value }))}
+              images={images}
+            />
+          </Card>
+
+          <Card>
             <h2 className="font-semibold text-ink-900 mb-1">{t('products.relatedProducts')}</h2>
             <p className="text-xs text-ink-500 mb-4">{t('products.relatedProductsHint')}</p>
             <RelatedProductsPicker
@@ -452,15 +515,21 @@ export default function ProductForm() {
                 )}
               </p>
             )}
-            <Field label={t('common.stock')} required>
-              <Input
-                type="number"
-                required
-                min="0"
-                value={form.stock}
-                onChange={(e) => setForm({ ...form, stock: e.target.value })}
-              />
-            </Field>
+            {hasVariants ? (
+              <Field label={t('common.stock')} hint={t('variants.stockFromVariants')}>
+                <Input type="number" value={variantsTotal} disabled readOnly />
+              </Field>
+            ) : (
+              <Field label={t('common.stock')} required>
+                <Input
+                  type="number"
+                  required
+                  min="0"
+                  value={form.stock}
+                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                />
+              </Field>
+            )}
             <div className="flex items-center gap-2 mt-1">
               <input
                 type="checkbox"
@@ -524,7 +593,7 @@ export default function ProductForm() {
             </Field>
             <Field
               label={t('products.variantOf')}
-              hint="Type the same model name on multiple products (e.g. different RAM/storage, or different colors) to group them as variants."
+              hint={t('products.variantOfHint')}
             >
               <Input
                 value={form.groupName}

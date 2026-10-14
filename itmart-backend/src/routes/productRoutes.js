@@ -11,6 +11,7 @@ const {
   deleteProduct,
   duplicateProduct,
   setProductAttributes,
+  setProductVariants,
   getRelatedProducts,
   setRelatedProducts,
   addProductImages,
@@ -36,6 +37,7 @@ router.post('/:id/duplicate', protect, duplicateProduct);
 router.put('/:id', protect, updateProduct);
 router.delete('/:id', protect, deleteProduct);
 router.put('/:id/attributes', protect, setProductAttributes);
+router.put('/:id/variants', protect, setProductVariants);
 router.get('/:id/related', protect, getRelatedProducts);
 router.put('/:id/related', protect, setRelatedProducts);
 router.post('/:id/images', protect, upload.array('images', 8), upload.processImages, addProductImages);

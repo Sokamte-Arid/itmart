@@ -5,14 +5,17 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { pickLang } from '@/lib/i18nHelpers';
+import { pickLang, interpolate } from '@/lib/i18nHelpers';
 import { buildProductInquiryLink } from '@/lib/contact';
 
-export default function AddToCartPanel({ product, dict, locale }) {
+// product: { id, variantId?, variantLabel?, nameEn, nameFr, price, discountPrice, stock, images, image? }
+// missingChoice: the option still to choose (e.g. "Pointure") — the Buy
+// button waits for it.
+export default function AddToCartPanel({ product, missingChoice, dict, locale }) {
   const { addItem } = useCart();
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
-  const outOfStock = product.stock === 0;
+  const outOfStock = !missingChoice && product.stock === 0;
 
   const primaryImage = product.images?.find((i) => i.isPrimary) || product.images?.[0];
   const name = pickLang(product, 'name', locale);
@@ -23,12 +26,14 @@ export default function AddToCartPanel({ product, dict, locale }) {
     addItem(
       {
         id: product.id,
+        variantId: product.variantId,
+        variantLabel: product.variantLabel,
         nameEn: product.nameEn,
         nameFr: product.nameFr,
         price: product.price,
         discountPrice: product.discountPrice,
         stock: product.stock,
-        image: primaryImage?.url,
+        image: product.image || primaryImage?.url,
       },
       quantity
     );
@@ -42,13 +47,38 @@ export default function AddToCartPanel({ product, dict, locale }) {
   // hydration mismatch (server renders one URL, browser renders another).
   const handleWhatsAppInquiry = () => {
     trackContact('whatsapp');
-    window.open(buildProductInquiryLink(product, name, locale), '_blank', 'noopener,noreferrer');
+    const fullName = product.variantLabel ? `${name} (${product.variantLabel})` : name;
+    window.open(buildProductInquiryLink(product, fullName, locale), '_blank', 'noopener,noreferrer');
   };
 
   if (outOfStock) {
     return (
       <div className="mt-6 px-4 py-3 rounded-lg bg-surface text-ink-500 text-sm font-medium text-center">
-        {dict.product.outOfStock}
+        {product.variantLabel ? `${product.variantLabel} — ${dict.product.outOfStock}` : dict.product.outOfStock}
+      </div>
+    );
+  }
+
+  // Colour / size not chosen yet
+  if (missingChoice) {
+    return (
+      <div className="mt-6 flex gap-3">
+        <button
+          type="button"
+          disabled
+          className="flex-1 flex items-center justify-center gap-2 bg-navy-900/40 text-white font-semibold rounded-full py-3.5 cursor-not-allowed"
+        >
+          <ShoppingBag size={17} />
+          {interpolate(dict.product.chooseOption, { option: missingChoice.toLowerCase() })}
+        </button>
+        <button
+          onClick={handleWhatsAppInquiry}
+          aria-label={dict.product.askOnWhatsapp}
+          title={dict.product.askOnWhatsapp}
+          className="shrink-0 h-[52px] w-[52px] rounded-full bg-whatsapp hover:bg-whatsapp-dark text-white flex items-center justify-center transition-colors"
+        >
+          <MessageCircle size={22} />
+        </button>
       </div>
     );
   }
@@ -74,7 +104,7 @@ export default function AddToCartPanel({ product, dict, locale }) {
           </button>
         </div>
         <span className="text-xs text-success-600 font-medium">
-          {dict.product.inStock}
+          {product.stock <= 5 ? interpolate(dict.product.onlyLeft, { count: product.stock }) : dict.product.inStock}
         </span>
       </div>
 

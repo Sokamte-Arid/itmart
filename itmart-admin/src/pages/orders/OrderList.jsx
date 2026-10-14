@@ -8,6 +8,7 @@ import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { Select } from '../../components/ui/Field';
 import OrderDetailModal from './OrderDetailModal';
+import ExportOrdersModal from './ExportOrdersModal';
 import { useToast } from '../../components/ui/Toast';
 import { usePushMessages } from '../../pwa/pwa';
 import { telHref, whatsappHref } from '../../utils/contact';
@@ -52,8 +53,10 @@ export default function OrderList() {
   const [statusFilter, setStatusFilter] = useState('');
   const [selected, setSelected] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
-  const [exporting, setExporting] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  // Export window; ?export=<productId> (from a product's page) opens it on that product
+  const exportProductParam = searchParams.get('export');
+  const [exportOpen, setExportOpen] = useState(exportProductParam !== null);
   const openId = searchParams.get('open');
 
   const load = useCallback(() => {
@@ -106,14 +109,12 @@ export default function OrderList() {
     }
   };
 
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      await ordersApi.exportOrdersCsv(statusFilter || undefined);
-    } catch (err) {
-      showToast(t('orders.exportFailed'), 'error');
-    } finally {
-      setExporting(false);
+  const closeExport = () => {
+    setExportOpen(false);
+    if (exportProductParam !== null) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('export');
+      setSearchParams(next, { replace: true });
     }
   };
 
@@ -132,10 +133,19 @@ export default function OrderList() {
             </option>
           ))}
         </Select>
-        <Button icon={Download} variant="secondary" onClick={handleExport} disabled={exporting}>
-          {exporting ? t('common.loading') : t('orders.exportCsv')}
+        <Button icon={Download} variant="secondary" onClick={() => setExportOpen(true)}>
+          {t('exports.button')}
         </Button>
       </div>
+
+      <ExportOrdersModal
+        open={exportOpen}
+        onClose={closeExport}
+        statuses={STATUSES}
+        statusLabel={(s) => t(statusKey(s))}
+        initialProductId={exportProductParam || ''}
+        initialStatus={statusFilter}
+      />
 
       {/* Phones: one card per order */}
       <div className="md:hidden space-y-3">

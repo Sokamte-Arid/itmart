@@ -12,6 +12,8 @@ const { buildInvoicePdf } = require('../utils/invoicePdf');
 const { stripCostPrice, stripCostPriceFromList } = require('../utils/sanitizeProduct');
 const { variantLabel } = require('../utils/variants');
 const { readStore, getLowStockThreshold } = require('../utils/storeSettings');
+const { readBranding } = require('../utils/branding');
+const { buildTablePdf } = require('../utils/tablePdf');
 
 const MAX_QUANTITY_PER_LINE = 999;
 
@@ -380,48 +382,191 @@ const getOrderStats = asyncHandler(async (req, res) => {
   });
 });
 
-// GET /api/orders/export  (admin — CSV download, optional ?status= filter)
-const exportOrdersCsv = asyncHandler(async (req, res) => {
-  const { status } = req.query;
-  const where = {};
-  if (status) where.status = status;
+// ---------------------------------------------------------------------------
+// ADMIN — exports (Excel-compatible CSV or PDF)
+// ---------------------------------------------------------------------------
 
-  const orders = await prisma.order.findMany({
-    where,
-    include: { items: { include: { product: true } } },
-    orderBy: { createdAt: 'desc' },
+const STATUS_LABELS = {
+  fr: { PENDING: 'En attente', CONTACTED: 'Contacté', CONFIRMED: 'Confirmée', SHIPPED: 'Expédiée', DELIVERED: 'Livrée', CANCELLED: 'Annulée' },
+  en: { PENDING: 'Pending', CONTACTED: 'Contacted', CONFIRMED: 'Confirmed', SHIPPED: 'Shipped', DELIVERED: 'Delivered', CANCELLED: 'Cancelled' },
+};
+const VALID_STATUSES = Object.keys(STATUS_LABELS.fr);
+
+// Plain spaces as thousands separators: PDF fonts and every Excel read them
+const fcfa = (n) => `${String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} FCFA`;
+const when = (d, lang) =>
+  new Date(d).toLocaleString(lang === 'en' ? 'en-GB' : 'fr-FR', {
+    timeZone: 'Africa/Douala',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
-  // Minimal, dependency-free CSV writer — wraps every field in quotes and
-  // escapes embedded quotes, which is sufficient for RFC 4180 compliance
-  // without pulling in a library for something this small.
+/**
+ * CSV that opens directly in Excel: UTF-8 with BOM (accents), and ";" as
+ * separator in French (what French-language Excel expects), "," in English.
+ */
+function toCsv(headers, rows, lang) {
+  const sep = lang === 'en' ? ',' : ';';
   const escape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-  const headers = [
-    'Reference', 'Status', 'Customer', 'Phone', 'Email', 'Address', 'City',
-    'Items', 'Delivery Fee (FCFA)', 'Total (FCFA)', 'Date',
-  ];
-  const rows = orders.map((o) => [
-    o.reference,
-    o.status,
-    o.customerName,
-    o.phone,
-    o.email || '',
-    o.address,
-    o.city,
-    o.items
-      .map((i) => `${i.product?.nameEn || '—'}${i.variantLabel ? ` (${i.variantLabel})` : ''} x${i.quantity}`)
-      .join('; '),
-    o.deliveryFee,
-    o.total,
-    o.createdAt.toISOString(),
-  ]);
+  return '\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(sep)).join('\r\n');
+}
 
-  const csv = [headers, ...rows].map((row) => row.map(escape).join(',')).join('\r\n');
+const safeFileName = (text) =>
+  String(text || 'export')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+    .toLowerCase() || 'export';
+
+// GET /api/orders/export/products  (admin) — products that have been ordered,
+// with how many orders each, for the "customers of a product" export
+const getOrderedProducts = asyncHandler(async (req, res) => {
+  const grouped = await prisma.orderItem.groupBy({
+    by: ['productId'],
+    _count: { orderId: true },
+    _sum: { quantity: true },
+  });
+  const products = await prisma.product.findMany({
+    where: { id: { in: grouped.map((g) => g.productId) } },
+    select: { id: true, nameFr: true, nameEn: true, sku: true, isActive: true },
+  });
+  const byId = Object.fromEntries(products.map((p) => [p.id, p]));
+  const data = grouped
+    .filter((g) => byId[g.productId])
+    .map((g) => ({ ...byId[g.productId], orderCount: g._count.orderId, quantity: g._sum.quantity || 0 }))
+    .sort((a, b) => (a.nameFr || a.nameEn).localeCompare(b.nameFr || b.nameEn, 'fr'));
+  res.json({ success: true, data });
+});
+
+// GET /api/orders/export?format=csv|pdf&status=&productId=&lang=fr|en  (admin)
+//  - without productId: one line per order (all products)
+//  - with productId: the customers who ordered that product, one line per order
+const exportOrders = asyncHandler(async (req, res) => {
+  const lang = req.query.lang === 'en' ? 'en' : 'fr';
+  const format = req.query.format === 'pdf' ? 'pdf' : 'csv';
+  const status = VALID_STATUSES.includes(req.query.status) ? req.query.status : null;
+  const productId = typeof req.query.productId === 'string' && req.query.productId ? req.query.productId : null;
+  const L = STATUS_LABELS[lang];
+  const fr = lang === 'fr';
+
+  let title;
+  let subtitleLines = [];
+  let headers;
+  let rows;
+  let columns; // PDF widths
+  let fileBase;
+
+  if (productId) {
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new ApiError(404, fr ? 'Produit introuvable.' : 'Product not found.');
+    const productName = (fr ? product.nameFr : product.nameEn) || product.nameEn;
+
+    const items = await prisma.orderItem.findMany({
+      where: { productId, ...(status ? { order: { status } } : {}) },
+      include: { order: true },
+      orderBy: { order: { createdAt: 'desc' } },
+    });
+
+    headers = fr
+      ? ['Date', 'Commande', 'Statut', 'Client', 'Téléphone', 'E-mail', 'Ville', 'Adresse', 'Variante', 'Qté', 'Prix unitaire', 'Total']
+      : ['Date', 'Order', 'Status', 'Customer', 'Phone', 'Email', 'City', 'Address', 'Variant', 'Qty', 'Unit price', 'Total'];
+    rows = items.map((i) => [
+      when(i.order.createdAt, lang),
+      i.order.reference,
+      L[i.order.status] || i.order.status,
+      i.order.customerName,
+      i.order.phone,
+      i.order.email || '',
+      i.order.city,
+      i.order.address,
+      i.variantLabel || '',
+      i.quantity,
+      fcfa(i.unitPrice),
+      fcfa(Number(i.unitPrice) * i.quantity),
+    ]);
+    columns = [11, 9, 8, 13, 10, 14, 8, 16, 10, 4, 10, 10];
+
+    const valid = items.filter((i) => i.order.status !== 'CANCELLED');
+    const customers = new Set(items.map((i) => i.order.phone)).size;
+    const qty = valid.reduce((s, i) => s + i.quantity, 0);
+    const revenue = valid.reduce((s, i) => s + Number(i.unitPrice) * i.quantity, 0);
+    title = fr ? `Clients — ${productName}` : `Customers — ${productName}`;
+    subtitleLines = [
+      `${fr ? 'Référence' : 'SKU'} : ${product.sku}${status ? ` · ${fr ? 'Statut' : 'Status'} : ${L[status]}` : ''}`,
+      fr
+        ? `${items.length} commande(s), ${customers} client(s) · ${qty} vendu(s) et ${fcfa(revenue)} hors commandes annulées`
+        : `${items.length} order(s), ${customers} customer(s) · ${qty} sold and ${fcfa(revenue)} excluding cancelled orders`,
+    ];
+    fileBase = `${fr ? 'clients' : 'customers'}-${safeFileName(productName)}`;
+  } else {
+    const orders = await prisma.order.findMany({
+      where: status ? { status } : {},
+      include: { items: { include: { product: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    headers = fr
+      ? ['Date', 'Commande', 'Statut', 'Client', 'Téléphone', 'E-mail', 'Ville', 'Adresse', 'Articles', 'Livraison', 'Total']
+      : ['Date', 'Order', 'Status', 'Customer', 'Phone', 'Email', 'City', 'Address', 'Items', 'Delivery', 'Total'];
+    rows = orders.map((o) => [
+      when(o.createdAt, lang),
+      o.reference,
+      L[o.status] || o.status,
+      o.customerName,
+      o.phone,
+      o.email || '',
+      o.city,
+      o.address,
+      o.items
+        .map((i) => {
+          const name = (fr ? i.product?.nameFr : i.product?.nameEn) || i.product?.nameEn || '—';
+          return `${name}${i.variantLabel ? ` (${i.variantLabel})` : ''} x${i.quantity}`;
+        })
+        .join(' ; '),
+      fcfa(o.deliveryFee),
+      fcfa(o.total),
+    ]);
+    columns = [11, 9, 8, 13, 10, 14, 8, 15, 24, 9, 10];
+    title = fr ? 'Commandes' : 'Orders';
+    subtitleLines = [
+      `${orders.length} ${fr ? 'commande(s)' : 'order(s)'}${status ? ` · ${fr ? 'Statut' : 'Status'} : ${L[status]}` : ''}`,
+    ];
+    fileBase = fr ? 'commandes' : 'orders';
+  }
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  subtitleLines.push(`${fr ? 'Exporté le' : 'Exported on'} ${when(new Date(), lang)}`);
+
+  if (format === 'pdf') {
+    const branding = await readBranding().catch(() => null);
+    const store = await readStore().catch(() => null);
+    const pdf = await buildTablePdf({
+      title,
+      subtitleLines,
+      columns: headers.map((header, i) => ({
+        header,
+        width: columns[i],
+        align: i >= headers.length - 2 || header === 'Qté' || header === 'Qty' ? 'right' : 'left',
+      })),
+      rows: rows.map((r) => r.map((v) => String(v ?? ''))),
+      footer: store?.companyName || 'IT Mart',
+      colors: branding ? { ink: branding.darkColor, accent: branding.primaryColor } : undefined,
+    });
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${fileBase}-${stamp}.pdf"`,
+      'Content-Length': pdf.length,
+    });
+    return res.send(pdf);
+  }
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="orders-${Date.now()}.csv"`);
-  // Prepend a UTF-8 BOM so Excel opens accented characters (é, à, etc.) correctly
-  res.send('\uFEFF' + csv);
+  res.setHeader('Content-Disposition', `attachment; filename="${fileBase}-${stamp}.csv"`);
+  res.send(toCsv(headers, rows, lang));
 });
 
 // GET /api/orders/stats/analytics  (admin — revenue trend + top products for charts)
@@ -607,6 +752,7 @@ module.exports = {
   getOrderById,
   updateOrderStatus,
   getOrderStats,
-  exportOrdersCsv,
+  exportOrders,
+  getOrderedProducts,
   getSalesAnalytics,
 };

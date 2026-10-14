@@ -494,5 +494,24 @@
   },
   "catalog": {
     "subtitle": "Products, categories and brands"
+  },
+  "exports": {
+    "button": "Export",
+    "title": "Export",
+    "allOrders": "All orders",
+    "allOrdersHint": "One line per order, all products.",
+    "byProduct": "Customers of a product",
+    "byProductHint": "The customers who ordered one specific product.",
+    "product": "Product",
+    "searchProduct": "Search a product…",
+    "noOrderedProducts": "No product has been ordered yet.",
+    "orderCount_one": "{{count}} order",
+    "orderCount_other": "{{count}} orders",
+    "chooseProduct": "Choose a product.",
+    "allStatuses": "All statuses",
+    "excel": "Excel",
+    "pdf": "PDF",
+    "excelHint": "Excel: a CSV file that opens directly in Excel or Google Sheets. PDF: ready to print.",
+    "productCustomers": "Customers of this product"
   }
 }

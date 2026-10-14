@@ -494,5 +494,24 @@
   },
   "catalog": {
     "subtitle": "Produits, catégories et marques"
+  },
+  "exports": {
+    "button": "Exporter",
+    "title": "Exporter",
+    "allOrders": "Toutes les commandes",
+    "allOrdersHint": "Une ligne par commande, tous produits confondus.",
+    "byProduct": "Clients d'un produit",
+    "byProductHint": "Les clients qui ont commandé un produit précis.",
+    "product": "Produit",
+    "searchProduct": "Rechercher un produit…",
+    "noOrderedProducts": "Aucun produit commandé pour l'instant.",
+    "orderCount_one": "{{count}} commande",
+    "orderCount_other": "{{count}} commandes",
+    "chooseProduct": "Choisissez un produit.",
+    "allStatuses": "Tous les statuts",
+    "excel": "Excel",
+    "pdf": "PDF",
+    "excelHint": "Excel : fichier CSV qui s'ouvre directement dans Excel ou Google Sheets. PDF : prêt à imprimer.",
+    "productCustomers": "Clients de ce produit"
   }
 }

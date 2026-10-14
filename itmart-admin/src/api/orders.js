@@ -51,17 +51,24 @@ export const downloadInvoice = async (orderId, lang = 'fr') => {
   return { number: res.headers['x-invoice-number'], type: res.headers['x-invoice-type'] };
 };
 
-export const exportOrdersCsv = async (status) => {
+// Products that have been ordered (with how many orders), for the export window
+export const getOrderedProducts = () => client.get('/orders/export/products').then((res) => res.data);
+
+// Downloads an export. { format: 'csv' | 'pdf', status?, productId? }
+// csv opens directly in Excel; with productId it's the customers of that product.
+export const exportOrders = async ({ format = 'csv', status, productId } = {}) => {
   const res = await client.get('/orders/export', {
-    params: status ? { status } : undefined,
+    params: { format, status: status || undefined, productId: productId || undefined, lang: i18n.language === 'en' ? 'en' : 'fr' },
     responseType: 'blob',
   });
-  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const disposition = res.headers['content-disposition'] || '';
+  const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] || `export-${Date.now()}.${format}`;
+  const url = window.URL.createObjectURL(new Blob([res.data], { type: format === 'pdf' ? 'application/pdf' : 'text/csv' }));
   const link = document.createElement('a');
   link.href = url;
-  link.setAttribute('download', `orders-${Date.now()}.csv`);
+  link.setAttribute('download', filename);
   document.body.appendChild(link);
   link.click();
   link.remove();
-  window.URL.revokeObjectURL(url);
+  setTimeout(() => window.URL.revokeObjectURL(url), 10000);
 };

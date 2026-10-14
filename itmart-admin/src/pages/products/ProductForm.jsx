@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Upload, Star, Trash2, ImageOff, Camera } from 'lucide-react';
+import { ArrowLeft, Upload, Star, Trash2, ImageOff, Camera, Users } from 'lucide-react';
 import * as productsApi from '../../api/products';
 import * as categoriesApi from '../../api/categories';
 import * as brandsApi from '../../api/brands';
@@ -258,12 +258,24 @@ export default function ProductForm() {
 
   return (
     <div>
-      <button
-        onClick={() => navigate('/catalog/products')}
-        className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-900 mb-4"
-      >
-        <ArrowLeft size={15} /> {t('common.back')}
-      </button>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <button
+          onClick={() => navigate('/catalog/products')}
+          className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-900"
+        >
+          <ArrowLeft size={15} /> {t('common.back')}
+        </button>
+        {/* Customers who ordered this product (Excel / PDF) */}
+        {isEdit && (
+          <button
+            type="button"
+            onClick={() => navigate(`/orders?export=${id}`)}
+            className="flex items-center gap-1.5 text-sm font-medium text-accent-600 hover:underline"
+          >
+            <Users size={15} /> {t('exports.productCustomers')}
+          </button>
+        )}
+      </div>
 
       <form id="product-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-6">

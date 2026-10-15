@@ -401,7 +401,9 @@
       "ivory": "Ivory",
       "pearl": "Pearl grey",
       "tint": "Brand tint"
-    }
+    },
+    "logoDark": "Logo for dark backgrounds (optional)",
+    "logoDarkHint": "Light version of your logo (white text, transparent background), shown as is in the dark footer. Without it, the main logo sits on a small white card there."
   },
   "store": {
     "subtitle": "WhatsApp, contacts, social media, invoices",

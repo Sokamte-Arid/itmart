@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import CookieSettingsLink from './CookieSettingsLink';
 import { imageUrl } from '@/lib/api';
-import { Cpu, Phone, Mail, Truck, ShieldCheck, MessageCircle, Wallet, HelpCircle, MapPin, PackageCheck, Music2 } from 'lucide-react';
+import { Cpu, Phone, Mail, Truck, ShieldCheck, MessageCircle, Wallet, MapPin, Music2 } from 'lucide-react';
 
 // Shown only while no delivery zone exists yet (admin → Zones de livraison)
 const CITIES = ['Yaoundé', 'Douala', 'Bafoussam', 'Bamenda', 'Garoua', 'Maroua'];
@@ -27,23 +27,24 @@ function InstagramIcon(props) {
 }
 
 // logoUrl: the shop logo uploaded in the admin (Identité visuelle), if any
+// logoDarkUrl: optional version made for dark backgrounds — shown as is,
+//   without the white card
 // store: contact details and social links (admin → Boutique & contact)
 // deliveryCities: active delivery zones (admin → Zones de livraison)
-export default function Footer({ dict, logoUrl = null, store = {}, deliveryCities = [] }) {
+export default function Footer({ dict, logoUrl = null, logoDarkUrl = null, store = {}, deliveryCities = [] }) {
   const { whatsappNumber, facebookUrl, instagramUrl, tiktokUrl } = store;
   const email = store.contactEmail;
   // Phone shown in the footer: the one entered, else the WhatsApp number
   const phone = store.contactPhone || (whatsappNumber ? `+${whatsappNumber}` : '');
   const whatsappLink = whatsappNumber ? `https://wa.me/${whatsappNumber}` : null;
-  const cities = deliveryCities.length ? deliveryCities.slice(0, 8) : CITIES;
+  const cities = deliveryCities.length ? deliveryCities.slice(0, 6) : CITIES;
+  const moreCities = deliveryCities.length > 6 || !deliveryCities.length;
 
   const trustItems = [
     { icon: Truck, label: dict.footer.trustDelivery },
     { icon: ShieldCheck, label: dict.footer.trustGenuine },
     { icon: MessageCircle, label: dict.footer.trustSupport },
     { icon: Wallet, label: dict.footer.trustPayOnDelivery },
-    // Questions go to WhatsApp (or email if there's no WhatsApp number)
-    { icon: HelpCircle, label: dict.footer.trustHelp, href: whatsappLink || (email ? `mailto:${email}` : null) },
   ];
 
   const socialLinks = [
@@ -53,77 +54,54 @@ export default function Footer({ dict, logoUrl = null, store = {}, deliveryCitie
     whatsappLink && { icon: MessageCircle, href: whatsappLink, label: 'WhatsApp' },
   ].filter(Boolean);
 
+  const linkClass = 'hover:text-white transition-colors';
+
   return (
-    <footer className="bg-navy-950 text-white/70">
-      {/* Trust strip */}
+    <footer className="bg-navy-950 text-white/70 text-sm">
+      {/* Promises: one compact row (2 × 2 on phones) */}
       <div className="border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <h2 className="text-white font-extrabold text-lg text-center mb-6">{dict.footer.trustTitle}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
-            {trustItems.map(({ icon: Icon, label, href }, i) => {
-              const content = (
-                <div className="flex flex-col items-center text-center gap-2">
-                  <Icon size={26} className="text-brand-500" strokeWidth={1.75} />
-                  <span className="text-xs text-white/70">{label}</span>
-                </div>
-              );
-              return href ? (
-                <a key={i} href={href} className="hover:text-white transition-colors">
-                  {content}
-                </a>
-              ) : (
-                <div key={i}>{content}</div>
-              );
-            })}
-          </div>
-        </div>
+        <ul className="max-w-7xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3">
+          {trustItems.map(({ icon: Icon, label }) => (
+            <li key={label} className="flex items-center gap-2 text-xs sm:text-sm text-white/80">
+              <Icon size={18} className="text-brand-500 shrink-0" strokeWidth={1.75} />
+              {label}
+            </li>
+          ))}
+        </ul>
       </div>
 
-      {/* Delivery coverage */}
-      <div className="border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <h2 className="text-white font-extrabold text-lg text-center mb-6">{dict.footer.deliveryTitle}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-            <div className="flex gap-4">
-              <MapPin size={28} className="text-brand-500 shrink-0" strokeWidth={1.5} />
-              <div>
-                <p className="text-white font-semibold text-sm mb-1">{dict.footer.deliveryWhere}</p>
-                <p className="text-sm text-white/70">{cities.join(', ')}{deliveryCities.length > 8 || !deliveryCities.length ? '...' : ''}</p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <PackageCheck size={28} className="text-brand-500 shrink-0" strokeWidth={1.5} />
-              <div>
-                <p className="text-white font-semibold text-sm mb-1">{dict.footer.deliveryHow}</p>
-                <p className="text-sm text-white/70">{dict.footer.deliveryHowText}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Brand / Quick links / Legal / Contact — matches the reference layout:
-          logo+tagline+socials on the left, link columns on the right. */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-        <div>
-          {logoUrl ? (
-            // On a white card, so a dark logo stays visible on the dark footer
-            <div className="inline-flex items-center rounded-xl bg-white px-3 py-2 mb-3">
+      {/* Shop / links / legal / contact. Phones: links and legal side by side */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-7 grid grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr] gap-x-6 gap-y-6">
+        <div className="col-span-2 lg:col-span-1">
+          {logoDarkUrl ? (
+            // Version made for dark backgrounds: shown as is
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl(logoDarkUrl)} alt="IT Mart" className="h-9 w-auto max-w-[180px] object-contain mb-2.5" />
+          ) : logoUrl ? (
+            // Regular logo on a small white card, so a dark logo stays visible
+            <div className="inline-flex items-center rounded-lg bg-white px-2.5 py-1.5 mb-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imageUrl(logoUrl)} alt="IT Mart" className="h-9 w-auto max-w-[180px] object-contain" />
+              <img src={imageUrl(logoUrl)} alt="IT Mart" className="h-7 w-auto max-w-[160px] object-contain" />
             </div>
           ) : (
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-2.5">
               <div className="h-8 w-8 rounded-lg bg-brand-500 flex items-center justify-center text-white">
                 <Cpu size={16} strokeWidth={2.5} />
               </div>
               <span className="font-extrabold text-lg text-white">IT Mart</span>
             </div>
           )}
-          <p className="text-sm text-white/70 max-w-xs mb-5">{dict.footer.about}</p>
+          <p className="max-w-xs">{dict.footer.about}</p>
+          <p className="mt-2 flex items-start gap-1.5 text-xs text-white/60">
+            <MapPin size={14} className="text-brand-500 shrink-0 mt-px" />
+            <span>
+              {dict.footer.deliveryWhere} : {cities.join(', ')}
+              {moreCities ? '…' : ''}
+            </span>
+          </p>
 
           {socialLinks.length > 0 && (
-            <div className="flex gap-2.5">
+            <div className="flex gap-2 mt-3">
               {socialLinks.map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}
@@ -132,9 +110,9 @@ export default function Footer({ dict, logoUrl = null, store = {}, deliveryCitie
                   rel="noopener noreferrer"
                   aria-label={label}
                   title={label}
-                  className="h-9 w-9 rounded-full bg-white/10 hover:bg-brand-500 text-white flex items-center justify-center transition-colors"
+                  className="h-8 w-8 rounded-full bg-white/10 hover:bg-brand-500 text-white flex items-center justify-center transition-colors"
                 >
-                  <Icon size={16} />
+                  <Icon size={15} />
                 </a>
               ))}
             </div>
@@ -142,20 +120,20 @@ export default function Footer({ dict, logoUrl = null, store = {}, deliveryCitie
         </div>
 
         <div>
-          <h3 className="text-white font-semibold text-sm mb-4">{dict.footer.quickLinks}</h3>
-          <ul className="space-y-2.5 text-sm">
+          <h3 className="text-white font-semibold mb-2.5">{dict.footer.quickLinks}</h3>
+          <ul className="space-y-1.5">
             <li>
-              <Link href="/" className="hover:text-white transition-colors">
+              <Link href="/" className={linkClass}>
                 {dict.nav.home}
               </Link>
             </li>
             <li>
-              <Link href="/products" className="hover:text-white transition-colors">
+              <Link href="/products" className={linkClass}>
                 {dict.nav.allProducts}
               </Link>
             </li>
             <li>
-              <Link href="/track" className="hover:text-white transition-colors">
+              <Link href="/track" className={linkClass}>
                 {dict.nav.track}
               </Link>
             </li>
@@ -163,33 +141,37 @@ export default function Footer({ dict, logoUrl = null, store = {}, deliveryCitie
         </div>
 
         <div>
-          <h3 className="text-white font-semibold text-sm mb-4">{dict.footer.legal || 'Legal'}</h3>
-          <ul className="space-y-2.5 text-sm">
+          <h3 className="text-white font-semibold mb-2.5">{dict.footer.legal || 'Legal'}</h3>
+          <ul className="space-y-1.5">
             <li>
-              <Link href="/terms" className="hover:text-white transition-colors">
+              <Link href="/terms" className={linkClass}>
                 {dict.footer.terms}
               </Link>
             </li>
             <li>
-              <Link href="/privacy" className="hover:text-white transition-colors">
+              <Link href="/privacy" className={linkClass}>
                 {dict.footer.privacy}
               </Link>
             </li>
             <li>
-              <Link href="/returns" className="hover:text-white transition-colors">
+              <Link href="/returns" className={linkClass}>
                 {dict.footer.returns}
               </Link>
+            </li>
+            <li>
+              <CookieSettingsLink label={dict.footer.cookieSettings} className={`${linkClass} text-left`} />
             </li>
           </ul>
         </div>
 
-        <div>
-          <h3 className="text-white font-semibold text-sm mb-4">{dict.footer.contact}</h3>
-          <ul className="space-y-2.5 text-sm">
+        <div className="col-span-2 lg:col-span-1">
+          <h3 className="text-white font-semibold mb-2.5">{dict.footer.contact}</h3>
+          {/* Phones: contacts on one line to save height */}
+          <ul className="flex flex-wrap gap-x-5 gap-y-1.5 lg:block lg:space-y-1.5">
             {whatsappLink && (
               <li className="flex items-center gap-2">
                 <MessageCircle size={14} className="shrink-0" />
-                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className={linkClass}>
                   WhatsApp
                 </a>
               </li>
@@ -197,15 +179,15 @@ export default function Footer({ dict, logoUrl = null, store = {}, deliveryCitie
             {phone && (
               <li className="flex items-center gap-2">
                 <Phone size={14} className="shrink-0" />
-                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="hover:text-white transition-colors">
+                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className={linkClass}>
                   {phone}
                 </a>
               </li>
             )}
             {email && (
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 min-w-0">
                 <Mail size={14} className="shrink-0" />
-                <a href={`mailto:${email}`} className="hover:text-white transition-colors">
+                <a href={`mailto:${email}`} className={`${linkClass} truncate`}>
                   {email}
                 </a>
               </li>
@@ -214,21 +196,10 @@ export default function Footer({ dict, logoUrl = null, store = {}, deliveryCitie
         </div>
       </div>
 
-      {/* Bottom bar — copyright left, legal links right, matching the reference */}
+      {/* Copyright. Extra room on the right so the WhatsApp button doesn't cover it */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/50">
-          <span>
-            © {new Date().getFullYear()} IT Mart. {dict.footer.rights}
-          </span>
-          <div className="flex items-center gap-4">
-            <Link href="/terms" className="hover:text-white transition-colors">
-              {dict.footer.terms}
-            </Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">
-              {dict.footer.privacy}
-            </Link>
-            <CookieSettingsLink label={dict.footer.cookieSettings} className="hover:text-white transition-colors" />
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 pr-20 sm:pr-56 text-xs text-white/50">
+          © {new Date().getFullYear()} IT Mart. {dict.footer.rights}
         </div>
       </div>
     </footer>

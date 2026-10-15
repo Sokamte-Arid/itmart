@@ -25,6 +25,7 @@ const DEFAULT_BRANDING = {
   backgroundColor: '#FFFFFF', // page background (light colours only)
   logoUrl: null, // wide logo (header, footer, invoices)
   iconUrl: null, // square icon (browser tab, phone home screen)
+  logoDarkUrl: null, // optional logo made for dark backgrounds (footer)
 };
 
 function cleanBranding(saved = {}) {
@@ -37,6 +38,7 @@ function cleanBranding(saved = {}) {
         : DEFAULT_BRANDING.backgroundColor,
     logoUrl: BRANDING_FILE.test(saved.logoUrl || '') ? saved.logoUrl : null,
     iconUrl: BRANDING_FILE.test(saved.iconUrl || '') ? saved.iconUrl : null,
+    logoDarkUrl: BRANDING_FILE.test(saved.logoDarkUrl || '') ? saved.logoDarkUrl : null,
   };
 }
 

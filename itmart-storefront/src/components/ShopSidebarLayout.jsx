@@ -1,6 +1,6 @@
 import FilterSidebar from './FilterSidebar';
 
-// Wraps a page's main content with the persistent category/brand/price
+// Wraps a page's main content with the persistent category/price
 // filter sidebar. Used on pages where browsing/filtering makes sense (home,
 // product listing, product detail) — not on transactional pages (cart,
 // checkout, order confirmation) or informational ones (legal pages, order
@@ -13,7 +13,6 @@ export default function ShopSidebarLayout({
   dict,
   locale,
   categories,
-  brands,
   selectedCategory = null,
   currentFilters = {},
   children,
@@ -24,7 +23,6 @@ export default function ShopSidebarLayout({
         dict={dict}
         locale={locale}
         categories={categories}
-        brands={brands}
         selectedCategory={selectedCategory}
         currentFilters={currentFilters}
       />

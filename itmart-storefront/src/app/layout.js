@@ -50,6 +50,7 @@ export default async function RootLayout({ children }) {
   ]);
   const themeCss = brandingCss(branding);
   const logoUrl = safeBrandingImage(branding?.logoUrl);
+  const logoDarkUrl = safeBrandingImage(branding?.logoDarkUrl);
 
   return (
     <html lang={locale} className="h-full antialiased">
@@ -69,7 +70,7 @@ export default async function RootLayout({ children }) {
           <CartProvider>
             <Header dict={t} locale={locale} categories={categories} logoUrl={logoUrl} />
             <main className="flex-1">{children}</main>
-            <Footer dict={t} logoUrl={logoUrl} store={storeInfo} deliveryCities={deliveryCities} />
+            <Footer dict={t} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} store={storeInfo} deliveryCities={deliveryCities} />
             {/* WhatsApp chat button (the email button is kept in components/ if needed later) */}
             <FloatingWhatsAppButton label={t.footer.chatWhatsapp} locale={locale} />
           </CartProvider>

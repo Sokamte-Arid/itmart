@@ -74,7 +74,8 @@ function ColorField({ label, hint, value, onChange }) {
   );
 }
 
-function ImageSlot({ title, hint, url, onUpload, onRemove, busy, square, t }) {
+// dark: preview background colour for a logo made for dark backgrounds
+function ImageSlot({ title, hint, url, onUpload, onRemove, busy, square, dark, t }) {
   const inputRef = useRef(null);
   return (
     <div className="mb-6 last:mb-0">
@@ -84,7 +85,10 @@ function ImageSlot({ title, hint, url, onUpload, onRemove, busy, square, t }) {
         {url ? (
           <>
             {/* Preview on white and on the dark footer colour */}
-            <div className={`flex items-center justify-center rounded-lg border border-surface-border bg-white ${square ? 'h-20 w-20' : 'h-20 px-4 min-w-40'}`}>
+            <div
+              className={`flex items-center justify-center rounded-lg border border-surface-border ${dark ? '' : 'bg-white'} ${square ? 'h-20 w-20' : 'h-20 px-4 min-w-40'}`}
+              style={dark ? { backgroundColor: dark } : undefined}
+            >
               <img src={`${API_ORIGIN}${url}`} alt="" className={square ? 'h-14 w-14 object-contain' : 'h-12 w-auto max-w-56 object-contain'} />
             </div>
             {square && (
@@ -233,6 +237,16 @@ export default function BrandingSettings() {
               onUpload={(file) => upload('icon', file)}
               onRemove={() => save({ removeIcon: true }, 'icon')}
               square
+              t={t}
+            />
+            <ImageSlot
+              title={t('branding.logoDark')}
+              hint={t('branding.logoDarkHint')}
+              url={branding.logoDarkUrl}
+              busy={busy === 'logoDark'}
+              onUpload={(file) => upload('logoDark', file)}
+              onRemove={() => save({ removeLogoDark: true }, 'logoDark')}
+              dark={mix(d, '#000000', 0.35)}
               t={t}
             />
           </Card>
@@ -390,7 +404,9 @@ export default function BrandingSettings() {
               </p>
             </div>
             <div className="px-4 py-4 flex items-center gap-3" style={{ backgroundColor: shade.d950 }}>
-              {logo ? (
+              {branding.logoDarkUrl ? (
+                <img src={`${API_ORIGIN}${branding.logoDarkUrl}`} alt="" className="h-6 w-auto max-w-24 object-contain" />
+              ) : logo ? (
                 <span className="inline-flex rounded-lg bg-white px-2 py-1">
                   <img src={logo} alt="" className="h-6 w-auto max-w-24 object-contain" />
                 </span>

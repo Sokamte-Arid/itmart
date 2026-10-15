@@ -401,7 +401,9 @@
       "ivory": "Ivoire",
       "pearl": "Gris perle",
       "tint": "Teinte de la marque"
-    }
+    },
+    "logoDark": "Logo pour fond sombre (optionnel)",
+    "logoDarkHint": "Version claire de votre logo (texte blanc, fond transparent), affichée telle quelle dans le pied de page sombre. Sans elle, le logo principal y est posé sur une petite carte blanche."
   },
   "store": {
     "subtitle": "WhatsApp, contacts, réseaux sociaux, factures",

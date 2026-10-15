@@ -58,7 +58,9 @@ function CategoryNode({ cat, depth, openIds, selected, onSelect, locale }) {
   );
 }
 
-export default function FilterSidebar({ dict, locale, categories, brands, selectedCategory, currentFilters }) {
+// (brands is still passed by the pages but no longer shown: the filter list
+// only offers categories, price and characteristics)
+export default function FilterSidebar({ dict, locale, categories, selectedCategory, currentFilters }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -127,26 +129,6 @@ export default function FilterSidebar({ dict, locale, categories, brands, select
         </div>
       </div>
 
-      {brands.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-ink-900 mb-3">{dict.filters.brand}</h3>
-          <div className="space-y-1.5">
-            {brands.map((brand) => (
-              <button
-                key={brand.id}
-                onClick={() => updateParam('brand', currentFilters.brand === brand.slug ? null : brand.slug)}
-                className={`block w-full text-left text-sm px-2.5 py-1.5 rounded-lg transition-colors ${
-                  currentFilters.brand === brand.slug
-                    ? 'bg-brand-50 text-brand-600 font-medium'
-                    : 'text-ink-700 hover:bg-surface'
-                }`}
-              >
-                {brand.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div>
         <h3 className="text-sm font-semibold text-ink-900 mb-3">{dict.filters.priceRange}</h3>

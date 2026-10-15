@@ -130,7 +130,7 @@ const getBrandingSettings = asyncHandler(async (req, res) => {
 });
 
 // PUT /api/settings/branding  (super admin)
-// body: { primaryColor, darkColor, backgroundColor, removeLogo?, removeIcon?, lang? }
+// body: { primaryColor, darkColor, backgroundColor, removeLogo?, removeIcon?, removeLogoDark?, lang? }
 const updateBrandingSettings = asyncHandler(async (req, res) => {
   const lang = req.body.lang === 'en' ? 'en' : 'fr';
   const current = await readBranding();
@@ -162,25 +162,30 @@ const updateBrandingSettings = asyncHandler(async (req, res) => {
     removeBrandingFile(current.iconUrl);
     next.iconUrl = null;
   }
+  if (req.body.removeLogoDark === true) {
+    removeBrandingFile(current.logoDarkUrl);
+    next.logoDarkUrl = null;
+  }
 
   res.json({ success: true, data: await saveBranding(next) });
 });
 
-// POST /api/settings/branding/logo | /api/settings/branding/icon  (super admin, multipart "image")
+// POST /api/settings/branding/logo | /icon | /logoDark  (super admin, multipart "image")
+// logoDark = optional version of the logo made for dark backgrounds (footer).
 // The logo keeps its transparency (PNG) so it can also go on invoices; the
 // icon is made square (512×512) for the browser tab and phone home screens.
 const uploadBrandingImage = asyncHandler(async (req, res) => {
   const kind = req.params.kind;
-  if (!['logo', 'icon'].includes(kind)) throw new ApiError(404, 'Not found.');
+  if (!['logo', 'icon', 'logoDark'].includes(kind)) throw new ApiError(404, 'Not found.');
   if (!req.file) throw new ApiError(400, 'An image file is required (field "image").');
 
   fs.mkdirSync(BRANDING_DIR, { recursive: true });
-  const filename = `${kind}-${Date.now()}-${Math.round(Math.random() * 1e6)}.png`;
+  const filename = `${kind === 'logoDark' ? 'logo-dark' : kind}-${Date.now()}-${Math.round(Math.random() * 1e6)}.png`;
   const dest = path.join(BRANDING_DIR, filename);
 
   try {
     const image = sharp(req.file.buffer).rotate();
-    if (kind === 'logo') {
+    if (kind === 'logo' || kind === 'logoDark') {
       await image.resize({ width: 800, height: 240, fit: 'inside', withoutEnlargement: true }).png().toFile(dest);
     } else {
       await image
@@ -193,7 +198,7 @@ const uploadBrandingImage = asyncHandler(async (req, res) => {
   }
 
   const current = await readBranding();
-  const field = kind === 'logo' ? 'logoUrl' : 'iconUrl';
+  const field = { logo: 'logoUrl', icon: 'iconUrl', logoDark: 'logoDarkUrl' }[kind];
   removeBrandingFile(current[field]);
   const saved = await saveBranding({ ...current, [field]: `/uploads/branding/${filename}` });
   res.json({ success: true, data: saved });

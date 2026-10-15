@@ -18,7 +18,6 @@ const emptyForm = {
   sku: '',
   categoryId: '',
   brandId: '',
-  groupName: '',
   nameEn: '',
   nameFr: '',
   shortDescriptionEn: '',
@@ -98,7 +97,6 @@ export default function ProductForm() {
         sku: p.sku,
         categoryId: p.categoryId,
         brandId: p.brandId || '',
-        groupName: p.group?.nameEn || '',
         nameEn: p.nameEn,
         nameFr: p.nameFr,
         shortDescriptionEn: p.shortDescriptionEn || '',
@@ -595,16 +593,6 @@ export default function ProductForm() {
                   </option>
                 ))}
               </Select>
-            </Field>
-            <Field
-              label={t('products.variantOf')}
-              hint={t('products.variantOfHint')}
-            >
-              <Input
-                value={form.groupName}
-                onChange={(e) => setForm({ ...form, groupName: e.target.value })}
-                placeholder="e.g. HP EliteBook 840"
-              />
             </Field>
           </Card>
 

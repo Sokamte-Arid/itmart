@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import ProductGallery from './ProductGallery';
 import AddToCartPanel from './AddToCartPanel';
 import { formatFCFA } from '@/lib/utils';
@@ -11,14 +10,10 @@ const norm = (value) => (value || '').trim().toLowerCase();
 
 /**
  * Product page: gallery + name, price, options and the Buy button.
- *
- * Two kinds of options are supported:
- *  - product.variants (current): colours and/or sizes of THIS product, each
- *    with its own stock. The customer picks a colour and a size.
- *  - colorVariants (older): separate products grouped by model name, one per
- *    colour. Still works for products set up that way.
+ * Options = product.variants: colours and/or sizes of this product, each with
+ * its own stock. The customer picks a colour and a size.
  */
-export default function ProductVariantSwitcher({ product, colorVariants, description, dict, locale }) {
+export default function ProductVariantSwitcher({ product, description, dict, locale }) {
   const variants = product.variants || [];
   const hasOwnVariants = variants.length > 0;
 
@@ -72,16 +67,10 @@ export default function ProductVariantSwitcher({ product, colorVariants, descrip
     ? variants.find((v) => norm(v.colorName) === norm(selectedColor) && v.imageId)?.imageId || null
     : null;
 
-  // -------------------------------------------- older grouped colour products
-  const hasColors = !hasOwnVariants && colorVariants && colorVariants.length > 1;
-  const [selectedId, setSelectedId] = useState(product.id);
-
-  // Which product is currently "active" — matches the selected color when
-  // this group has color options, otherwise it's always just this page's
-  // own product.
-  const selected = hasColors ? colorVariants.find((v) => v.id === selectedId) || product : product;
-  const selectedIsUnavailable = selected.stock === 0 || selected.isActive === false;
-  const name = pickLang(product, 'name', locale); // title stays fixed across colors
+  // The product shown (kept as `selected` so the code below reads simply)
+  const selected = product;
+  const selectedIsUnavailable = product.stock === 0 || product.isActive === false;
+  const name = pickLang(product, 'name', locale);
 
   // AddToCartPanel expects a plain product object, built from whatever is
   // selected so cart/checkout/WhatsApp all reference the right colour/size.
@@ -208,36 +197,6 @@ export default function ProductVariantSwitcher({ product, colorVariants, descrip
           </div>
         )}
 
-        {/* ---- Older grouped colour products ---- */}
-        {hasColors && (
-          <div className="mb-4">
-            <p className="text-sm text-ink-700 mb-2">
-              {colorWord} : <span className="font-medium text-ink-900">{selected.colorName}</span>
-            </p>
-            <div className="flex flex-wrap gap-2.5">
-              {colorVariants.map((variant) => {
-                const unavailable = variant.stock === 0 || variant.isActive === false;
-                return (
-                  <button
-                    key={variant.id}
-                    type="button"
-                    onClick={() => setSelectedId(variant.id)}
-                    title={unavailable ? `${variant.colorName} — ${dict.product.outOfStock}` : variant.colorName}
-                    aria-label={variant.colorName}
-                    aria-pressed={variant.id === selected.id}
-                    className={`h-9 w-9 rounded-full border-2 transition-all ${
-                      variant.id === selected.id
-                        ? 'border-brand-500 scale-110'
-                        : 'border-surface-border hover:border-ink-300'
-                    } ${unavailable ? 'opacity-30' : ''}`}
-                    style={{ backgroundColor: variant.hexValue || '#e5e7eb' }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* key: a new colour / size starts again at quantity 1 */}
         <AddToCartPanel
           key={cartProduct.variantId || cartProduct.id}
@@ -273,25 +232,6 @@ export default function ProductVariantSwitcher({ product, colorVariants, descrip
           </div>
         )}
 
-        {/* Non-color variant groups (e.g. RAM/storage) still show as the old
-            "other configurations" links — unused when this group has colors,
-            since the backend returns siblings: [] in that case. */}
-        {product.siblings?.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-surface-border">
-            <h2 className="text-sm font-semibold text-ink-900 mb-3">{dict.product.otherConfigurations}</h2>
-            <div className="flex flex-wrap gap-2">
-              {product.siblings.map((sib) => (
-                <Link
-                  key={sib.id}
-                  href={`/products/${sib.slug}`}
-                  className="px-3 py-2 rounded-lg border border-surface-border text-sm text-ink-700 hover:border-brand-400 hover:text-brand-600 transition-colors"
-                >
-                  {pickLang(sib, 'name', locale)}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </>
   );

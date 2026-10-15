@@ -108,8 +108,6 @@
     "bestSeller": "Best seller",
     "active": "Active",
     "inactive": "Inactive",
-    "variantOf": "Variant of (group)",
-    "noGroup": "No group / standalone",
     "specifications": "Specifications",
     "uploadImages": "Upload images",
     "primaryImage": "Primary",
@@ -133,8 +131,7 @@
     "shortDescriptionEn": "Short description (English)",
     "shortDescriptionHint": "Shown under the product name, before the price. 1–2 sentences.",
     "shortDescriptionPlaceholderFr": "Ex. Imprimante 3-en-1 Wi-Fi, idéale pour la maison et le bureau.",
-    "shortDescriptionPlaceholderEn": "E.g. 3-in-1 Wi-Fi printer, ideal for home and office.",
-    "variantOfHint": "For different models sold as separate products (e.g. 8 GB / 16 GB RAM): type the same model name on each. For colours or sizes of one product, use \"Variants\" below instead."
+    "shortDescriptionPlaceholderEn": "E.g. 3-in-1 Wi-Fi printer, ideal for home and office."
   },
   "categories": {
     "title": "Categories",

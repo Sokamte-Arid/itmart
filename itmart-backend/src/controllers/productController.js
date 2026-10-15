@@ -223,54 +223,6 @@ const getProductBySlug = asyncHandler(async (req, res) => {
   // still sees it via getProductById below, which has no isActive check.
   if (!product || !product.isActive) throw new ApiError(404, 'Product not found.');
 
-  // Sibling variants (same group, excluding itself) — carries full spec data
-  // now (not just a thumbnail) so color variants can be swapped in-place on
-  // the product page without a page reload.
-  let siblings = [];
-  if (product.groupId) {
-    siblings = await prisma.product.findMany({
-      where: { groupId: product.groupId, id: { not: product.id }, isActive: true },
-      include: {
-        images: { orderBy: { sortOrder: 'asc' } },
-        attributeValues: { include: { attribute: true } },
-      },
-    });
-  }
-
-  // If this product has a COLOR-type attribute, build a compact list of
-  // every color option in the group (this product + its siblings) with
-  // everything the storefront needs to switch between them instantly on
-  // the same page: images, price, stock, and sku — no navigation, no
-  // separate page per color, matching a standard variant-swatch UX.
-  // Products with their own variants (colour / size chosen on the page) don't
-  // use the older "one product per colour" swatches.
-  let colorVariants = [];
-  const colorAttrValue = product.attributeValues.find((av) => av.attribute.type === 'COLOR');
-  if (colorAttrValue && product.variants.length === 0) {
-    const groupMembers = [product, ...siblings];
-    colorVariants = groupMembers
-      .map((member) => {
-        const cv = member.attributeValues.find((av) => av.attributeId === colorAttrValue.attributeId);
-        if (!cv) return null;
-        return {
-          id: member.id,
-          slug: member.slug,
-          sku: member.sku,
-          nameEn: member.nameEn,
-          nameFr: member.nameFr,
-          colorName: cv.value,
-          hexValue: cv.hexValue,
-          price: member.price,
-          discountPrice: member.discountPrice,
-          stock: member.stock,
-          isActive: member.isActive,
-          images: member.images,
-        };
-      })
-      .filter(Boolean)
-      .map((v) => stripCostPrice(v));
-  }
-
   // Admin-curated cross-sells (e.g. printer -> ink, paper, cable), distinct
   // from the automatic "same category" related products the storefront
   // shows separately further down the page.
@@ -284,12 +236,6 @@ const getProductBySlug = asyncHandler(async (req, res) => {
     success: true,
     data: {
       ...stripCostPrice(productWithoutJoinTable),
-      // Non-color siblings still show as the old "Other configurations"
-      // list. If this group varies by color, the swatches above replace
-      // that list on the frontend, so we only need siblings for groups
-      // that DON'T have a color attribute.
-      siblings: colorVariants.length > 0 ? [] : stripCostPriceFromList(siblings),
-      colorVariants,
       curatedRelated,
     },
   });
@@ -304,7 +250,6 @@ const getProductById = asyncHandler(async (req, res) => {
       variants: FULL_VARIANTS,
       brand: true,
       category: true,
-      group: true,
       attributeValues: { include: { attribute: true } },
     },
   });
@@ -322,8 +267,6 @@ const createProduct = asyncHandler(async (req, res) => {
     sku,
     categoryId,
     brandId,
-    groupId,
-    groupName,
     nameEn,
     nameFr,
     shortDescriptionEn,
@@ -346,24 +289,12 @@ const createProduct = asyncHandler(async (req, res) => {
   const finalSku = sku && sku.trim() ? sku.trim() : generateSku(nameEn);
   const slug = slugify(`${nameEn}-${finalSku}`, { lower: true, strict: true });
 
-  // Resolve variant group: explicit groupId wins; otherwise find-or-create by name
-  let resolvedGroupId = groupId || null;
-  if (!resolvedGroupId && groupName && groupName.trim()) {
-    const existing = await prisma.productGroup.findFirst({
-      where: { OR: [{ nameEn: groupName.trim() }, { nameFr: groupName.trim() }] },
-    });
-    resolvedGroupId = existing
-      ? existing.id
-      : (await prisma.productGroup.create({ data: { nameEn: groupName.trim(), nameFr: groupName.trim() } })).id;
-  }
-
   const product = await prisma.product.create({
     data: {
       sku: finalSku,
       slug,
       category: { connect: { id: categoryId } },
       brand: brandId ? { connect: { id: brandId } } : undefined,
-      group: resolvedGroupId ? { connect: { id: resolvedGroupId } } : undefined,
       nameEn,
       nameFr,
       shortDescriptionEn: cleanShort(shortDescriptionEn),
@@ -398,8 +329,6 @@ const updateProduct = asyncHandler(async (req, res) => {
   const {
     categoryId,
     brandId,
-    groupId,
-    groupName,
     nameEn,
     nameFr,
     shortDescriptionEn,
@@ -418,31 +347,6 @@ const updateProduct = asyncHandler(async (req, res) => {
   const data = {};
   if (categoryId) data.category = { connect: { id: categoryId } };
   if (brandId !== undefined) data.brand = brandId ? { connect: { id: brandId } } : { disconnect: true };
-
-  if (groupId !== undefined) {
-    data.group = groupId ? { connect: { id: groupId } } : { disconnect: true };
-  } else if (groupName !== undefined) {
-    if (groupName && groupName.trim()) {
-      // Same case-insensitive, trimmed match as createProduct — otherwise
-      // re-saving a product with the "same" variant name (different casing
-      // or spacing) forks it into yet another disconnected group instead
-      // of reconnecting it to its siblings.
-      const existing = await prisma.productGroup.findFirst({
-        where: {
-          OR: [
-            { nameEn: { equals: groupName.trim(), mode: 'insensitive' } },
-            { nameFr: { equals: groupName.trim(), mode: 'insensitive' } },
-          ],
-        },
-      });
-      const resolvedId = existing
-        ? existing.id
-        : (await prisma.productGroup.create({ data: { nameEn: groupName.trim(), nameFr: groupName.trim() } })).id;
-      data.group = { connect: { id: resolvedId } };
-    } else {
-      data.group = { disconnect: true };
-    }
-  }
 
   if (nameEn) data.nameEn = nameEn;
   if (nameFr) data.nameFr = nameFr;
@@ -545,7 +449,6 @@ const duplicateProduct = asyncHandler(async (req, res) => {
       slug: newSlug,
       category: { connect: { id: source.categoryId } },
       brand: source.brandId ? { connect: { id: source.brandId } } : undefined,
-      group: source.groupId ? { connect: { id: source.groupId } } : undefined, // often duplicated specifically to add another variant to the same group
       nameEn: `${source.nameEn} (Copy)`,
       nameFr: `${source.nameFr} (Copie)`,
       shortDescriptionEn: source.shortDescriptionEn,

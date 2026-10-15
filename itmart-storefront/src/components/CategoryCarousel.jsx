@@ -7,8 +7,20 @@ import ProductCard from './ProductCard';
 
 // One category's products in a single sliding row: swipe on phones, arrows
 // on computers. Cards snap into place so they never stop half-visible.
-export default function CategoryCarousel({ title, href, products, dict, locale }) {
+//
+// It also slides by itself: one product every AUTO_MS, back to the start at
+// the end. It pauses while the visitor hovers, touches or swipes it, while
+// it's off screen or the tab is hidden, and for visitors who asked their
+// device to reduce motion. `index` staggers the rows so they don't all move
+// at the same moment.
+const AUTO_MS = 3500;
+const PAUSE_AFTER_TOUCH_MS = 8000;
+
+export default function CategoryCarousel({ title, href, products, dict, locale, index = 0 }) {
   const trackRef = useRef(null);
+  const hovered = useRef(false);
+  const visible = useRef(false);
+  const lastTouch = useRef(0);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
 
@@ -30,8 +42,48 @@ export default function CategoryCarousel({ title, href, products, dict, locale }
     };
   }, [update]);
 
+  // Auto-slide
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+    const io = new IntersectionObserver(([entry]) => (visible.current = entry.isIntersecting), { threshold: 0.4 });
+    io.observe(el);
+
+    const tick = () => {
+      if (hovered.current || !visible.current || document.hidden) return;
+      if (Date.now() - lastTouch.current < PAUSE_AFTER_TOUCH_MS) return;
+      if (el.scrollWidth <= el.clientWidth + 4) return; // everything already fits
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+      if (atEnd) {
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        const card = el.firstElementChild;
+        const gap = parseFloat(getComputedStyle(el).columnGap) || 16;
+        el.scrollBy({ left: (card?.getBoundingClientRect().width || el.clientWidth / 2) + gap, behavior: 'smooth' });
+      }
+    };
+
+    let interval;
+    const start = setTimeout(() => {
+      interval = setInterval(tick, AUTO_MS);
+    }, (index % 4) * 900);
+
+    return () => {
+      clearTimeout(start);
+      clearInterval(interval);
+      io.disconnect();
+    };
+  }, [index]);
+
+  const noteTouch = () => {
+    lastTouch.current = Date.now();
+  };
+
   // Moves by almost a full "page" of cards
   const scrollByPage = (direction) => {
+    noteTouch();
     const el = trackRef.current;
     if (el) el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: 'smooth' });
   };
@@ -58,6 +110,11 @@ export default function CategoryCarousel({ title, href, products, dict, locale }
 
       <div
         ref={trackRef}
+        onMouseEnter={() => (hovered.current = true)}
+        onMouseLeave={() => (hovered.current = false)}
+        onTouchStart={noteTouch}
+        onWheel={noteTouch}
+        onFocus={noteTouch}
         className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {products.map((p) => (

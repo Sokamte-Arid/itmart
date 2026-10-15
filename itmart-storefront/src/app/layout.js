@@ -65,7 +65,7 @@ export default async function RootLayout({ children }) {
         {/* Shop colours chosen in the admin (only #RRGGBB values, see lib/theme.js) */}
         {themeCss && <style id="brand-theme" dangerouslySetInnerHTML={{ __html: themeCss }} />}
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col overflow-x-clip">
         <StoreInfoProvider value={storeInfo}>
           <CartProvider>
             <Header dict={t} locale={locale} categories={categories} logoUrl={logoUrl} />

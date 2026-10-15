@@ -21,9 +21,10 @@ export default async function CategoryCarousels({ categories = [], dict, locale 
 
   return (
     <div className="mt-12">
-      {visible.map(({ cat, products }) => (
+      {visible.map(({ cat, products }, i) => (
         <CategoryCarousel
           key={cat.id}
+          index={i}
           title={pickLang(cat, 'name', locale)}
           href={`/products?category=${cat.slug}`}
           products={products}

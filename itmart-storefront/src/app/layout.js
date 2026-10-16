@@ -23,6 +23,8 @@ const baseMetadata = {
     siteName: 'IT Mart',
     locale: 'fr_CM',
   },
+  // Default tab icon, replaced by the one uploaded in the admin (Identité visuelle)
+  icons: { icon: '/itmart-icon.png', apple: '/itmart-icon.png' },
 };
 
 // The shop's icon (admin → Identité visuelle) in the browser tab and on

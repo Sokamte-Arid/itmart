@@ -1,5 +1,6 @@
 const slugify = require('slugify');
 const prisma = require('../config/prisma');
+const { pickSeoFields } = require('../utils/seo');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
@@ -85,7 +86,7 @@ const createCategory = asyncHandler(async (req, res) => {
   const image = req.file ? `/uploads/categories/${req.file.filename}` : null;
 
   const category = await prisma.category.create({
-    data: { nameEn, nameFr, image, parentId: parentId || null, slug },
+    data: { nameEn, nameFr, image, parentId: parentId || null, slug, ...pickSeoFields(req.body, {}) },
   });
   res.status(201).json({ success: true, data: category });
 });
@@ -106,6 +107,7 @@ const updateCategory = asyncHandler(async (req, res) => {
     await checkParent(parentId || null, current.id);
     data.parentId = parentId || null;
   }
+  pickSeoFields(req.body, data);
 
   const category = await prisma.category.update({ where: { id: req.params.id }, data });
   res.json({ success: true, data: category });

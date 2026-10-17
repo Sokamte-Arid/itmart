@@ -36,7 +36,10 @@
     "chooseOne": "à choisir",
     "chooseOption": "Choisissez votre {option}",
     "chooseOptions": "Choisir la couleur / taille",
-    "onlyLeft": "Plus que {count} en stock"
+    "onlyLeft": "Plus que {count} en stock",
+    "addedShort": "Ajouté",
+    "addedToCart": "Ajouté à votre panier",
+    "viewCart": "Voir le panier"
   },
   "filters": {
     "title": "Filtres",
@@ -62,7 +65,9 @@
     "quantity": "Qté",
     "remove": "Retirer",
     "subtotal": "Sous-total",
-    "checkout": "Passer la commande"
+    "checkout": "Passer la commande",
+    "restored": "Votre panier a été retrouvé. Vous pouvez finaliser votre commande.",
+    "restoreEmpty": "Les articles de ce panier ne sont plus disponibles."
   },
   "checkout": {
     "title": "Commande",
@@ -83,7 +88,8 @@
     "total": "Total",
     "confirmButton": "Confirmer la commande via WhatsApp",
     "confirmHint": "Vous serez redirigé vers WhatsApp pour nous envoyer les détails de votre commande.",
-    "required": "Ce champ est requis."
+    "required": "Ce champ est requis.",
+    "cartSavedNote": "Votre panier est gardé avec votre numéro pour que nous puissions vous aider si la commande n'aboutit pas."
   },
   "confirmation": {
     "title": "Commande reçue !",
@@ -126,5 +132,14 @@
     "learnMore": "En savoir plus",
     "accept": "Accepter",
     "decline": "Refuser"
+  },
+  "wishlist": {
+    "title": "Mes favoris",
+    "subtitle": "Les produits que vous avez gardés de côté. Ils restent enregistrés sur cet appareil.",
+    "add": "Ajouter aux favoris",
+    "remove": "Retirer des favoris",
+    "view": "Voir",
+    "empty": "Aucun favori pour le moment",
+    "emptySubtitle": "Touchez le cœur sur un produit pour le retrouver ici plus tard."
   }
 }

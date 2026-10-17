@@ -14,6 +14,7 @@ const { variantLabel } = require('../utils/variants');
 const { readStore, getLowStockThreshold } = require('../utils/storeSettings');
 const { readBranding } = require('../utils/branding');
 const { buildTablePdf } = require('../utils/tablePdf');
+const { markCartRecovered } = require('./abandonedCartController');
 
 const MAX_QUANTITY_PER_LINE = 999;
 
@@ -27,9 +28,9 @@ const generateReference = () => {
 // ---------------------------------------------------------------------------
 
 // POST /api/orders
-// body: { customerName, phone, email?, address, deliveryZoneId, notes?, items: [{productId, variantId?, quantity}], lang }
+// body: { customerName, phone, email?, address, deliveryZoneId, notes?, items: [{productId, variantId?, quantity}], cartToken?, lang }
 const createOrder = asyncHandler(async (req, res) => {
-  const { customerName, phone, email, address, deliveryZoneId, notes, items, lang = 'fr' } = req.body;
+  const { customerName, phone, email, address, deliveryZoneId, notes, items, cartToken, lang = 'fr' } = req.body;
 
   if (!customerName || !phone || !address || !deliveryZoneId) {
     throw new ApiError(400, 'customerName, phone, address and deliveryZoneId are required.');
@@ -167,6 +168,10 @@ const createOrder = asyncHandler(async (req, res) => {
   );
   sendAdminOrderNotificationEmail(order, itemsForMessage).catch((err) =>
     console.error('[order] Failed to send admin notification email:', err.message)
+  );
+  // The cart the customer left earlier (if any) is now an order
+  markCartRecovered({ cartToken, phone, order }).catch((err) =>
+    console.error('[order] Failed to mark abandoned cart as recovered:', err.message)
   );
   // Instant notification on admins' phones (admin app) — also fire-and-forget
   notifyNewOrder(order).catch((err) =>

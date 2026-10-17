@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getDictionary, pickLang } from '@/lib/i18n';
-import { getProductBySlug, getProducts, getCategories, getBrands, imageUrl } from '@/lib/api';
-import { formatFCFA } from '@/lib/utils';
+import { getDictionary, getLocale, pickLang } from '@/lib/i18n';
+import { getProductBySlug, getProducts, getCategories, getBrands } from '@/lib/api';
+import { productSeo, productJsonLd, breadcrumbJsonLd, jsonLd } from '@/lib/seo';
 import ProductVariantSwitcher from '@/components/ProductVariantSwitcher';
 import ProductCard from '@/components/ProductCard';
 import ShopSidebarLayout from '@/components/ShopSidebarLayout';
@@ -10,25 +10,25 @@ import { TrackViewItem } from '@/components/TrackEvent';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
-  if (!product) return { title: 'Product not found' };
+  const [product, locale] = await Promise.all([getProductBySlug(slug), getLocale()]);
+  if (!product) return { title: locale === 'en' ? 'Product not found' : 'Produit introuvable', robots: { index: false } };
 
-  const price = product.discountPrice ?? product.price;
-  const primaryImage = product.images?.find((i) => i.isPrimary) || product.images?.[0];
+  // Admin → product → Référencement (Google), else name / short description
+  const { title, description, image } = productSeo(product, locale);
+  const path = `/products/${product.slug}`;
 
   return {
-    title: product.nameEn,
-    description:
-      product.shortDescriptionFr ||
-      product.shortDescriptionEn ||
-      product.descriptionEn ||
-      `${product.nameEn} — ${formatFCFA(price)}. Available at IT Mart, delivered across Cameroon.`,
+    title,
+    description,
+    alternates: { canonical: path },
     openGraph: {
-      title: product.nameEn,
-      description: `${formatFCFA(price)} — ${product.category?.nameEn || ''}`,
-      images: primaryImage ? [{ url: imageUrl(primaryImage.url) }] : [],
+      title,
+      description,
+      url: path,
       type: 'website',
+      images: image ? [{ url: image }] : [],
     },
+    twitter: { card: 'summary_large_image', title, description, images: image ? [image] : [] },
   };
 }
 
@@ -61,8 +61,19 @@ export default async function ProductDetailPage({ params }) {
     brand: product.brand ? { name: product.brand.name } : null,
   };
 
+  // Structured data for Google: price, stock, photos, breadcrumb
+  const breadcrumb = [
+    { name: t.nav.home, path: '/' },
+    ...(product.category
+      ? [{ name: pickLang(product.category, 'name', locale), path: `/products?category=${product.category.slug}` }]
+      : []),
+    { name, path: `/products/${product.slug}` },
+  ];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(productJsonLd(product, locale))} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(breadcrumbJsonLd(breadcrumb))} />
       <TrackViewItem product={trackedProduct} />
       <nav className="text-xs text-ink-500 mb-6 flex items-center gap-1.5">
         <Link href="/" className="hover:text-brand-600">

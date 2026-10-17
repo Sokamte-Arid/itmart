@@ -9,6 +9,7 @@ import { useCart } from '@/context/CartContext';
 import { imageUrl } from '@/lib/api';
 import { pickLang } from '@/lib/i18nHelpers';
 import { formatFCFA } from '@/lib/utils';
+import WishlistButton from './WishlistButton';
 
 export default function ProductCard({ product, dict, locale }) {
   const { addItem } = useCart();
@@ -78,10 +79,11 @@ export default function ProductCard({ product, dict, locale }) {
           </span>
         )}
         {outOfStock && (
-          <span className="absolute top-2 right-2 bg-ink-900/80 text-white text-[10px] font-semibold px-2 py-1 rounded-md">
+          <span className="absolute bottom-2 left-2 bg-ink-900/80 text-white text-[10px] font-semibold px-2 py-1 rounded-md">
             {dict.product.outOfStock}
           </span>
         )}
+        <WishlistButton product={product} dict={dict} className="absolute top-2 right-2" />
       </div>
 
       <div className="p-3 flex flex-col flex-1">
@@ -115,6 +117,8 @@ export default function ProductCard({ product, dict, locale }) {
           <button
             onClick={handleAddToCart}
             disabled={outOfStock}
+            data-action={hasVariants ? 'choose-options' : 'add-to-cart'}
+            data-product-id={product.id}
             aria-label={hasVariants ? dict.product.chooseOptions : dict.product.addToCart}
             title={hasVariants ? dict.product.chooseOptions : undefined}
             className="shrink-0 h-8 w-8 rounded-full bg-navy-900 text-white flex items-center justify-center hover:bg-brand-500 transition-colors disabled:opacity-30 disabled:pointer-events-none"

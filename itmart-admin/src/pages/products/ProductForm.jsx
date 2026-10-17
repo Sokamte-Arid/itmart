@@ -5,6 +5,8 @@ import { ArrowLeft, Upload, Star, Trash2, ImageOff, Camera, Users } from 'lucide
 import * as productsApi from '../../api/products';
 import * as categoriesApi from '../../api/categories';
 import * as brandsApi from '../../api/brands';
+import * as settingsApi from '../../api/settings';
+import ProductSeoPanel from './ProductSeoPanel';
 import RelatedProductsPicker from './RelatedProductsPicker';
 import VariantsEditor, { newVariantKey } from './VariantsEditor';
 import { flattenTree, indentedLabel } from '../../utils/categoryTree';
@@ -31,6 +33,9 @@ const emptyForm = {
   variantSizeLabel: '',
   isBestSeller: false,
   isActive: true,
+  seoTitle: '',
+  seoDescription: '',
+  seoKeyword: '',
 };
 
 export default function ProductForm() {
@@ -54,6 +59,9 @@ export default function ProductForm() {
   const [saving, setSaving] = useState(false);
   const [productId, setProductId] = useState(isEdit ? id : null);
   const [uploading, setUploading] = useState(false);
+  // Web address of the product page (set by the server), for the SEO preview
+  const [slug, setSlug] = useState('');
+  const [seoSiteName, setSeoSiteName] = useState('IT Mart');
 
   // Categories arrive as top-level records with nested `children` — flatten
   // so a product can be matched to (and assigned into) a subcategory too,
@@ -87,6 +95,10 @@ export default function ProductForm() {
   useEffect(() => {
     categoriesApi.getCategories().then((res) => setCategories(res.data));
     brandsApi.getBrands().then((res) => setBrands(res.data));
+    settingsApi
+      .getSeoSettings()
+      .then((res) => res.data?.siteName && setSeoSiteName(res.data.siteName))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -110,7 +122,11 @@ export default function ProductForm() {
         variantSizeLabel: p.variantSizeLabel || '',
         isBestSeller: p.isBestSeller,
         isActive: p.isActive,
+        seoTitle: p.seoTitle || '',
+        seoDescription: p.seoDescription || '',
+        seoKeyword: p.seoKeyword || '',
       });
+      setSlug(p.slug || '');
       const attrMap = {};
       p.attributeValues.forEach((av) => {
         if (av.attribute?.type === 'COLOR') {
@@ -157,6 +173,7 @@ export default function ProductForm() {
         const res = await productsApi.createProduct(payload);
         savedId = res.data.id;
         setProductId(savedId);
+        setSlug(res.data.slug || '');
       }
 
       // Save attribute values (specs) if the category has filterable attributes.
@@ -467,6 +484,17 @@ export default function ProductForm() {
               sizeLabel={form.variantSizeLabel}
               onSizeLabelChange={(value) => setForm((f) => ({ ...f, variantSizeLabel: value }))}
               images={images}
+            />
+          </Card>
+
+          <Card>
+            <h2 className="font-semibold text-ink-900 mb-3">{t('seo.productTitle')}</h2>
+            <ProductSeoPanel
+              form={form}
+              setForm={setForm}
+              slug={slug}
+              imageCount={images.length}
+              siteName={seoSiteName}
             />
           </Card>
 

@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
-import { useCart } from '@/context/CartContext';
+import { useEffect, useRef, useState } from 'react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useCart, lineKey } from '@/context/CartContext';
+import { getCartToRestore } from '@/lib/clientApi';
+import { setCartToken } from '@/lib/cartToken';
 import { imageUrl } from '@/lib/api';
 import { formatFCFA } from '@/lib/utils';
 import { useLocale } from '@/hooks/useLocale';
@@ -11,8 +14,34 @@ import { useLocale } from '@/hooks/useLocale';
 export default function CartPage() {
   const cart = useCart();
   const { locale, t } = useLocale();
+  const [restoring, setRestoring] = useState(false);
+  const [restoreNote, setRestoreNote] = useState('');
+  const restoreDone = useRef(false);
 
-  if (!cart?.hydrated) {
+  // Link sent by the shop on WhatsApp (/cart?restore=…): put that cart back
+  useEffect(() => {
+    if (!cart?.hydrated || restoreDone.current) return;
+    const token = new URLSearchParams(window.location.search).get('restore');
+    if (!token) return;
+    restoreDone.current = true;
+    setRestoring(true);
+    getCartToRestore(token, locale)
+      .then((data) => {
+        const items = data?.items || [];
+        items.forEach((item) => {
+          if (!cart.items.some((c) => c.key === lineKey(item.id, item.variantId))) cart.addItem(item, item.quantity);
+        });
+        if (items.length) setCartToken(token);
+        setRestoreNote(items.length ? 'restored' : 'empty');
+      })
+      .catch(() => setRestoreNote('empty'))
+      .finally(() => {
+        setRestoring(false);
+        window.history.replaceState(null, '', '/cart');
+      });
+  }, [cart, locale]);
+
+  if (!cart?.hydrated || restoring) {
     return <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 text-center text-ink-500">{t.common.loading}</div>;
   }
 
@@ -20,6 +49,7 @@ export default function CartPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-20 text-center">
         <ShoppingBag size={48} className="text-ink-300 mx-auto mb-4" />
+        {restoreNote === 'empty' && <p className="text-sm text-ink-600 mb-3">{t.cart.restoreEmpty}</p>}
         <h1 className="text-xl font-bold text-navy-900 mb-1">{t.cart.empty}</h1>
         <p className="text-ink-500 mb-6">{t.cart.emptySubtitle}</p>
         <Link
@@ -35,6 +65,11 @@ export default function CartPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <h1 className="text-2xl font-bold text-navy-900 mb-6">{t.cart.title}</h1>
+      {restoreNote === 'restored' && (
+        <p className="flex items-center gap-2 mb-4 px-4 py-3 rounded-lg bg-success-100 text-success-600 text-sm">
+          <CheckCircle2 size={16} className="shrink-0" /> {t.cart.restored}
+        </p>
+      )}
 
       <div className="bg-white rounded-xl border border-surface-border divide-y divide-surface-border">
         {cart.items.map((item) => {

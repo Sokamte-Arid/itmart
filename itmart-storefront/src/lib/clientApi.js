@@ -42,3 +42,39 @@ export async function submitOrder(payload) {
   }
   return json;
 }
+
+// One product by its web address — null when it no longer exists (wishlist refresh)
+export async function getProductBySlugClient(slug) {
+  try {
+    const res = await fetch(`${API_URL}/products/${encodeURIComponent(slug)}`);
+    if (res.status === 404) return null;
+    if (!res.ok) return undefined; // unknown: keep what we have
+    const json = await res.json();
+    return json.data || null;
+  } catch {
+    return undefined;
+  }
+}
+
+// Checkout: saves the cart with the customer's number, so the shop can help
+// if they don't finish. Never blocks or breaks the checkout.
+export async function saveAbandonedCart(payload) {
+  try {
+    await fetch(`${API_URL}/abandoned-carts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true, // still sent if the customer closes the page
+    });
+  } catch {
+    /* offline or blocked: nothing to do */
+  }
+}
+
+// The link sent on WhatsApp (/cart?restore=…): the products of that cart
+export async function getCartToRestore(token, lang) {
+  const res = await fetch(`${API_URL}/abandoned-carts/restore/${encodeURIComponent(token)}?lang=${lang === 'en' ? 'en' : 'fr'}`);
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json.data || null;
+}

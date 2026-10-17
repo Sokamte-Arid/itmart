@@ -1,5 +1,5 @@
 import { TrackSearch } from '@/components/TrackEvent';
-import { getDictionary, pickLang, interpolate } from '@/lib/i18n';
+import { getDictionary, getLocale, pickLang, interpolate } from '@/lib/i18n';
 import { getCategories, getBrands, getCategoryBySlug, getProducts } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 import ShopSidebarLayout from '@/components/ShopSidebarLayout';
@@ -10,19 +10,46 @@ import Link from 'next/link';
 
 export async function generateMetadata({ searchParams }) {
   const sp = await searchParams;
+  const locale = await getLocale();
+  const en = locale === 'en';
+  // Only plain category pages (and their next pages) go on Google — searches
+  // and filtered / sorted lists are the same products again.
+  const extraFilters = Object.keys(sp).some((k) => !['category', 'page'].includes(k));
+  const robots = extraFilters ? { index: false, follow: true } : undefined;
+
   if (sp.q) {
-    return { title: `"${sp.q}"`, description: `Search results for "${sp.q}" on IT Mart.` };
+    return {
+      title: `"${sp.q}"`,
+      description: en ? `Search results for "${sp.q}".` : `Résultats de recherche pour « ${sp.q} ».`,
+      robots: { index: false, follow: true },
+    };
   }
   if (sp.category) {
     const category = await getCategoryBySlug(sp.category);
     if (category) {
+      const name = pickLang(category, 'name', locale);
+      const title = category.seoTitle || name;
+      const description =
+        category.seoDescription ||
+        (en
+          ? `Shop ${name} at the best price — genuine IT equipment delivered across Cameroon.`
+          : `Achetez vos ${name} au meilleur prix : matériel informatique authentique livré partout au Cameroun.`);
+      const page = Number(sp.page) > 1 ? `&page=${Number(sp.page)}` : '';
       return {
-        title: category.nameEn,
-        description: `Shop ${category.nameEn} at IT Mart — genuine IT equipment delivered across Cameroon.`,
+        title,
+        description,
+        robots,
+        alternates: { canonical: `/products?category=${category.slug}${page}` },
+        openGraph: { title, description, url: `/products?category=${category.slug}` },
       };
     }
   }
-  return { title: 'All Products', description: 'Browse the full IT Mart catalog.' };
+  return {
+    title: en ? 'All products' : 'Tous les produits',
+    description: en ? 'Browse the full IT Mart catalog.' : 'Parcourez tout le catalogue IT Mart.',
+    robots,
+    alternates: { canonical: '/products' },
+  };
 }
 
 function parseAttrFilters(sp) {

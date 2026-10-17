@@ -21,7 +21,7 @@
   },
   "product": {
     "addToCart": "Add to cart",
-    "buyNow": "Buy",
+    "buyNow": "Buy now",
     "askOnWhatsapp": "Ask about this product on WhatsApp",
     "outOfStock": "Out of stock",
     "inStock": "In stock",
@@ -36,7 +36,10 @@
     "chooseOne": "choose",
     "chooseOption": "Choose your {option}",
     "chooseOptions": "Choose colour / size",
-    "onlyLeft": "Only {count} left"
+    "onlyLeft": "Only {count} left",
+    "addedShort": "Added",
+    "addedToCart": "Added to your cart",
+    "viewCart": "View cart"
   },
   "filters": {
     "title": "Filters",
@@ -62,7 +65,9 @@
     "quantity": "Qty",
     "remove": "Remove",
     "subtotal": "Subtotal",
-    "checkout": "Proceed to checkout"
+    "checkout": "Proceed to checkout",
+    "restored": "Your cart is back. You can complete your order.",
+    "restoreEmpty": "The items in this cart are no longer available."
   },
   "checkout": {
     "title": "Checkout",
@@ -83,7 +88,8 @@
     "total": "Total",
     "confirmButton": "Confirm order via WhatsApp",
     "confirmHint": "You'll be redirected to WhatsApp to send your order details to us.",
-    "required": "This field is required."
+    "required": "This field is required.",
+    "cartSavedNote": "Your cart is kept with your number so we can help if the order doesn't go through."
   },
   "confirmation": {
     "title": "Order received!",
@@ -126,5 +132,14 @@
     "learnMore": "Learn more",
     "accept": "Accept",
     "decline": "Decline"
+  },
+  "wishlist": {
+    "title": "My favourites",
+    "subtitle": "The products you saved for later. They're kept on this device.",
+    "add": "Add to favourites",
+    "remove": "Remove from favourites",
+    "view": "View",
+    "empty": "No favourites yet",
+    "emptySubtitle": "Tap the heart on a product to find it here later."
   }
 }

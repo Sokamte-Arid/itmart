@@ -9,7 +9,7 @@ import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import ProductForm from './pages/products/ProductForm';
 import CatalogPage from './pages/catalog/CatalogPage';
-import OrderList from './pages/orders/OrderList';
+import OrdersPage from './pages/orders/OrdersPage';
 import BannerList from './pages/banners/BannerList';
 import AdminsList from './pages/admins/AdminsList';
 import Analytics from './pages/analytics/Analytics';
@@ -67,8 +67,9 @@ const router = createBrowserRouter([
         handle: { titleKey: 'nav.deliveryZones', subtitleKey: 'deliveryZones.subtitle' },
       },
       {
-        path: 'orders',
-        element: <OrderList />,
+        // Commandes / Paniers abandonnés, as tabs
+        path: 'orders/:tab?',
+        element: <OrdersPage />,
         handle: { titleKey: 'orders.title', subtitleKey: 'orders.subtitle' },
       },
       {

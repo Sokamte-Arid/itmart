@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Search, ShoppingCart, Cpu, Globe, Package, ChevronDown } from 'lucide-react';
+import { Search, ShoppingCart, Cpu, Globe, Package, ChevronDown, Heart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { fetchSearchSuggestions } from '@/lib/clientApi';
 import { imageUrl } from '@/lib/api';
 import { pickLang } from '@/lib/i18nHelpers';
@@ -17,6 +18,8 @@ const flatten = (list = [], depth = 0) =>
 export default function Header({ dict, locale, categories = [], logoUrl = null }) {
   const router = useRouter();
   const { itemCount } = useCart();
+  const wishlist = useWishlist();
+  const wishlistCount = wishlist?.hydrated ? wishlist.count : 0;
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -155,8 +158,23 @@ export default function Header({ dict, locale, categories = [], logoUrl = null }
           </button>
         </div>
 
+        {/* Favourites */}
+        <Link
+          href="/wishlist"
+          className="relative shrink-0 p-2 -mr-2 sm:mr-0 rounded-lg hover:bg-surface"
+          aria-label={dict.wishlist.title}
+          title={dict.wishlist.title}
+        >
+          <Heart size={22} className="text-navy-900" />
+          {wishlistCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 bg-brand-500 text-white text-[10px] font-bold h-5 min-w-5 px-1 rounded-full flex items-center justify-center">
+              {wishlistCount}
+            </span>
+          )}
+        </Link>
+
         {/* Cart */}
-        <Link href="/cart" className="relative shrink-0 p-2 rounded-lg hover:bg-surface">
+        <Link href="/cart" className="relative shrink-0 p-2 rounded-lg hover:bg-surface" aria-label={dict.nav.cart}>
           <ShoppingCart size={22} className="text-navy-900" />
           {itemCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 bg-brand-500 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center">

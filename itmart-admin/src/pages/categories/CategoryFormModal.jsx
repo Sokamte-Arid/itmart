@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { Upload } from 'lucide-react';
 import Modal from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
-import { Field, Input, Select } from '../../components/ui/Field';
+import { Field, Input, Select, Textarea } from '../../components/ui/Field';
+import GooglePreview from '../../components/seo/GooglePreview';
+import { SEO_TITLE, SEO_DESC, lengthTone } from '../../components/seo/seoUtils';
 import * as categoriesApi from '../../api/categories';
 import { API_ORIGIN } from '../../api/client';
 import { useToast } from '../../components/ui/Toast';
 import { flattenTree, subtreeIds, findInTree, indentedLabel, MAX_DEPTH } from '../../utils/categoryTree';
 
-const emptyForm = { nameEn: '', nameFr: '', parentId: '' };
+const emptyForm = { nameEn: '', nameFr: '', parentId: '', seoTitle: '', seoDescription: '' };
 
 export default function CategoryFormModal({ open, onClose, category, categories, onSaved }) {
   const { t } = useTranslation();
@@ -24,7 +26,13 @@ export default function CategoryFormModal({ open, onClose, category, categories,
     if (open) {
       setForm(
         category
-          ? { nameEn: category.nameEn, nameFr: category.nameFr, parentId: category.parentId || '' }
+          ? {
+              nameEn: category.nameEn,
+              nameFr: category.nameFr,
+              parentId: category.parentId || '',
+              seoTitle: category.seoTitle || '',
+              seoDescription: category.seoDescription || '',
+            }
           : emptyForm
       );
       setImageFile(null);
@@ -118,6 +126,49 @@ export default function CategoryFormModal({ open, onClose, category, categories,
             })()}
           </Select>
         </Field>
+        {/* Référencement (Google) — optional, folded away */}
+        <details className="mt-2 rounded-lg border border-surface-border px-3 py-2 group">
+          <summary className="cursor-pointer text-sm font-medium text-ink-800 select-none">
+            {t('seo.categoryTitle')}
+          </summary>
+          <div className="pt-3">
+            <p className="text-xs text-ink-500 mb-3">{t('seo.categoryIntro')}</p>
+            <Field
+              label={t('seo.title')}
+              hint={`${t('seo.titleHint')} ${(form.seoTitle || form.nameFr).length}/${SEO_TITLE.max}`}
+            >
+              <Input
+                value={form.seoTitle}
+                maxLength={SEO_TITLE.hard}
+                onChange={(e) => setForm({ ...form, seoTitle: e.target.value })}
+                placeholder={form.nameFr}
+              />
+            </Field>
+            <Field
+              label={t('seo.description')}
+              hint={`${t('seo.descriptionHint')} ${form.seoDescription.length}/${SEO_DESC.max}`}
+              error={
+                form.seoDescription && lengthTone(form.seoDescription.length, SEO_DESC) === 'danger'
+                  ? t('seo.descriptionTooShortOrLong', { min: SEO_DESC.min, max: SEO_DESC.max })
+                  : undefined
+              }
+            >
+              <Textarea
+                rows={3}
+                value={form.seoDescription}
+                maxLength={SEO_DESC.hard}
+                onChange={(e) => setForm({ ...form, seoDescription: e.target.value })}
+                placeholder={t('seo.categoryDescriptionPlaceholder', { name: form.nameFr || '…' })}
+              />
+            </Field>
+            <GooglePreview
+              title={(form.seoTitle || form.nameFr) && `${form.seoTitle || form.nameFr} — IT Mart`}
+              description={form.seoDescription}
+              path={category?.slug ? `products?category=${category.slug}` : 'products'}
+            />
+          </div>
+        </details>
+
         <div className="flex justify-end gap-2 mt-6">
           <Button type="button" variant="secondary" onClick={onClose}>
             {t('common.cancel')}

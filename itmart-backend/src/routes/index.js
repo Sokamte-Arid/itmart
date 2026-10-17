@@ -8,6 +8,7 @@ const bannerRoutes = require('./bannerRoutes');
 const deliveryZoneRoutes = require('./deliveryZoneRoutes');
 const pushRoutes = require('./pushRoutes');
 const settingsRoutes = require('./settingsRoutes');
+const abandonedCartRoutes = require('./abandonedCartRoutes');
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/banners', bannerRoutes);
 router.use('/delivery-zones', deliveryZoneRoutes);
 router.use('/push', pushRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/abandoned-carts', abandonedCartRoutes);
 
 module.exports = router;

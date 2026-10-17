@@ -10,6 +10,8 @@ const {
   getStoreSettings,
   getStoreSettingsAdmin,
   updateStoreSettings,
+  getSeoSettings,
+  updateSeoSettings,
 } = require('../controllers/settingsController');
 const { protect, authorize } = require('../middleware/auth');
 const ApiError = require('../utils/ApiError');
@@ -31,10 +33,12 @@ const brandingUpload = multer({
 router.get('/tracking', getTrackingSettings);
 router.get('/branding', getBrandingSettings);
 router.get('/store', getStoreSettings);
+router.get('/seo', getSeoSettings);
 
 // Only a Super Admin can change them
 router.get('/store/admin', protect, authorize('SUPER_ADMIN'), getStoreSettingsAdmin);
 router.put('/store', protect, authorize('SUPER_ADMIN'), updateStoreSettings);
+router.put('/seo', protect, authorize('SUPER_ADMIN'), updateSeoSettings);
 router.put('/tracking', protect, authorize('SUPER_ADMIN'), updateTrackingSettings);
 router.put('/branding', protect, authorize('SUPER_ADMIN'), updateBrandingSettings);
 router.post('/branding/:kind', protect, authorize('SUPER_ADMIN'), brandingUpload.single('image'), uploadBrandingImage);

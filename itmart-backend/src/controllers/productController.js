@@ -20,6 +20,8 @@ const CARD_VARIANTS = {
 // Full variant data for the product page and the admin form
 const FULL_VARIANTS = { orderBy: { sortOrder: 'asc' } };
 
+const { pickSeoFields } = require('../utils/seo');
+
 const cleanSizeLabel = (value) => {
   if (value === undefined || value === null) return null;
   const text = String(value).trim().replace(/\s+/g, ' ');
@@ -307,6 +309,7 @@ const createProduct = asyncHandler(async (req, res) => {
       stock: stock ?? 0,
       variantSizeLabel: cleanSizeLabel(variantSizeLabel),
       isBestSeller: !!isBestSeller,
+      ...pickSeoFields(req.body, {}, { keyword: true }),
       attributeValues: attributes?.length
         ? {
             create: attributes.map((a) => ({
@@ -366,6 +369,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
   if (isBestSeller !== undefined) data.isBestSeller = isBestSeller;
   if (isActive !== undefined) data.isActive = isActive;
+  pickSeoFields(req.body, data, { keyword: true });
 
   // Capture stock before the update, so we can tell if this save is what
   // crossed it into low-stock territory (vs. it already being low).
@@ -460,6 +464,7 @@ const duplicateProduct = asyncHandler(async (req, res) => {
       discountPrice: source.discountPrice,
       stock: 0, // a duplicate is a new listing, not the same physical stock — admin sets the real quantity
       variantSizeLabel: source.variantSizeLabel,
+      seoKeyword: source.seoKeyword,
       isBestSeller: false, // best-seller status shouldn't carry over automatically
       isActive: true,
       attributeValues: {

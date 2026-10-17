@@ -24,3 +24,8 @@ export const uploadBrandingImage = (kind, file) => {
 export const getStoreSettings = () => client.get('/settings/store/admin').then((res) => res.data);
 
 export const updateStoreSettings = (payload) => client.put('/settings/store', payload).then((res) => res.data);
+
+// Référencement (SEO) of the whole site
+export const getSeoSettings = () => client.get('/settings/seo').then((res) => res.data);
+
+export const updateSeoSettings = (payload) => client.put('/settings/seo', payload).then((res) => res.data);

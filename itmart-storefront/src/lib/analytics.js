@@ -147,6 +147,19 @@ export function trackAddToCart(product, quantity = 1) {
   gtag('event', 'add_to_cart', { currency: CURRENCY, value, items: [gaItem(product, quantity)] });
 }
 
+/** A product was added to the favourites (heart button). */
+export function trackAddToWishlist(product) {
+  const value = priceOf(product);
+  fbq('track', 'AddToWishlist', {
+    content_ids: [product.id],
+    content_name: nameOf(product),
+    content_type: 'product',
+    value,
+    currency: CURRENCY,
+  });
+  gtag('event', 'add_to_wishlist', { currency: CURRENCY, value, items: [gaItem(product)] });
+}
+
 /** The checkout page was opened with items in the cart. */
 export function trackBeginCheckout(cartItems, value) {
   fbq('track', 'InitiateCheckout', {

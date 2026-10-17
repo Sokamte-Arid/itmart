@@ -4,15 +4,16 @@ import { useTranslation } from 'react-i18next';
 // Tab bar under the page title, used by the pages that group several
 // sections (Catalogue, Paramètres). Each tab is a real address, so the
 // browser's back button and bookmarks work.
-// tabs: [{ to, labelKey, icon }]
+// tabs: [{ to, labelKey, icon, end? }] — end: only active on that exact address
 export default function PageTabs({ tabs }) {
   const { t } = useTranslation();
   return (
     <div role="tablist" className="mb-5 flex gap-1 border-b border-surface-border">
-      {tabs.map(({ to, labelKey, icon: Icon }) => (
+      {tabs.map(({ to, labelKey, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
+          end={end}
           role="tab"
           className={({ isActive }) =>
             // Phones: equal tabs, icon above the label; larger screens: one row

@@ -1,15 +1,17 @@
 import { Navigate, useParams } from 'react-router-dom';
-import { Store, Palette, BarChart3 } from 'lucide-react';
+import { Store, Palette, BarChart3, Search } from 'lucide-react';
 import PageTabs from '../../components/ui/PageTabs';
 import StoreSettings from './StoreSettings';
 import BrandingSettings from './BrandingSettings';
 import TrackingSettings from './TrackingSettings';
+import SeoSettings from './SeoSettings';
 
-// "Paramètres": Boutique & contact / Identité visuelle / Suivi & publicité
+// "Paramètres": Boutique & contact / Identité visuelle / Suivi & publicité / Référencement
 const TABS = [
   { key: 'store', labelKey: 'nav.store', icon: Store, Component: StoreSettings },
   { key: 'branding', labelKey: 'nav.branding', icon: Palette, Component: BrandingSettings },
   { key: 'tracking', labelKey: 'settings.tabTracking', icon: BarChart3, Component: TrackingSettings },
+  { key: 'seo', labelKey: 'seo.tab', icon: Search, Component: SeoSettings },
 ];
 
 export default function SettingsPage() {

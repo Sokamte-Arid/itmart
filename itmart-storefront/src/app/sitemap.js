@@ -1,30 +1,49 @@
 import { getCategories, getProducts } from '@/lib/api';
+import { SITE_URL } from '@/lib/seo';
+
+// Every category (at any level) and every product, for Google.
+// Submit https://<your-domain>/sitemap.xml in Google Search Console.
+export const revalidate = 600;
+
+const flatten = (nodes, out = []) => {
+  for (const node of nodes || []) {
+    out.push(node);
+    flatten(node.children, out);
+  }
+  return out;
+};
+
+async function allProducts() {
+  const products = [];
+  for (let page = 1; page <= 50; page += 1) {
+    const res = await getProducts({ limit: 100, page });
+    products.push(...(res.data || []));
+    if (!res.meta || page >= res.meta.pages) break;
+  }
+  return products;
+}
 
 export default async function sitemap() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-
-  const [categories, productsRes] = await Promise.all([
-    getCategories(),
-    getProducts({ limit: 100 }), // Next.js caps individual sitemaps at 50k entries; fine for now
-  ]);
+  const [categories, products] = await Promise.all([getCategories(), allProducts()]);
 
   const staticPages = [
-    { url: `${siteUrl}/`, changeFrequency: 'daily', priority: 1 },
-    { url: `${siteUrl}/products`, changeFrequency: 'daily', priority: 0.9 },
-    { url: `${siteUrl}/track`, changeFrequency: 'monthly', priority: 0.3 },
-    { url: `${siteUrl}/terms`, changeFrequency: 'yearly', priority: 0.2 },
-    { url: `${siteUrl}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
-    { url: `${siteUrl}/returns`, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${SITE_URL}/`, changeFrequency: 'daily', priority: 1 },
+    { url: `${SITE_URL}/products`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${SITE_URL}/track`, changeFrequency: 'monthly', priority: 0.3 },
+    { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${SITE_URL}/returns`, changeFrequency: 'yearly', priority: 0.2 },
   ];
 
-  const categoryPages = categories.map((cat) => ({
-    url: `${siteUrl}/products?category=${cat.slug}`,
+  const categoryPages = flatten(categories).map((cat) => ({
+    url: `${SITE_URL}/products?category=${cat.slug}`,
+    lastModified: cat.updatedAt,
     changeFrequency: 'weekly',
     priority: 0.7,
   }));
 
-  const productPages = productsRes.data.map((p) => ({
-    url: `${siteUrl}/products/${p.slug}`,
+  const productPages = products.map((p) => ({
+    url: `${SITE_URL}/products/${p.slug}`,
     lastModified: p.updatedAt,
     changeFrequency: 'weekly',
     priority: 0.6,

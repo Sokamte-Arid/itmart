@@ -5,35 +5,52 @@ import Footer from '@/components/Footer';
 import FloatingWhatsAppButton from '@/components/FloatingWhatsAppButton';
 import Analytics from '@/components/Analytics';
 import ScrollReveal from '@/components/ScrollReveal';
-import { getDictionary } from '@/lib/i18n';
-import { getCategories, getTrackingSettings, getBranding, getStoreInfo, getDeliveryCities, imageUrl } from '@/lib/api';
+import { getDictionary, getLocale } from '@/lib/i18n';
+import {
+  getCategories,
+  getTrackingSettings,
+  getBranding,
+  getStoreInfo,
+  getDeliveryCities,
+  getSeoSettings,
+  imageUrl,
+} from '@/lib/api';
+import { WishlistProvider } from '@/context/WishlistContext';
+import { SITE_URL, siteNameOf, homeTitleOf, homeDescriptionOf, organizationJsonLd, jsonLd } from '@/lib/seo';
 import { StoreInfoProvider } from '@/context/StoreContext';
 import { brandingCss, safeBrandingImage } from '@/lib/theme';
 
-const baseMetadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  title: {
-    default: 'IT Mart — IT Equipment in Cameroon',
-    template: '%s — IT Mart',
-  },
-  description:
-    'Laptops, accessories, networking gear and more, delivered across Cameroon. Genuine products, honest prices.',
-  openGraph: {
-    type: 'website',
-    siteName: 'IT Mart',
-    locale: 'fr_CM',
-  },
-  // Default tab icon, replaced by the one uploaded in the admin (Identité visuelle)
-  icons: { icon: '/itmart-icon.png', apple: '/itmart-icon.png' },
-};
-
-// The shop's icon (admin → Identité visuelle) in the browser tab and on
-// phone home screens, when one has been uploaded.
+// Titles, description and Google verification come from the admin
+// (Paramètres → Référencement); products and categories set their own.
 export async function generateMetadata() {
-  const branding = await getBranding();
+  const [branding, seo, locale] = await Promise.all([getBranding(), getSeoSettings(), getLocale()]);
+  const siteName = siteNameOf(seo);
   const icon = safeBrandingImage(branding?.iconUrl);
-  if (!icon) return baseMetadata;
-  return { ...baseMetadata, icons: { icon: imageUrl(icon), apple: imageUrl(icon) } };
+  const logo = safeBrandingImage(branding?.logoUrl);
+  const description = homeDescriptionOf(seo, locale);
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: homeTitleOf(seo, locale),
+      template: `%s — ${siteName}`,
+    },
+    description,
+    applicationName: siteName,
+    openGraph: {
+      type: 'website',
+      siteName,
+      locale: locale === 'en' ? 'en_US' : 'fr_FR',
+      description,
+      ...(logo ? { images: [{ url: imageUrl(logo) }] } : {}),
+    },
+    twitter: { card: 'summary_large_image' },
+    ...(seo?.googleVerification ? { verification: { google: seo.googleVerification } } : {}),
+    // Tab icon: the one uploaded in the admin (Identité visuelle), else IT Mart's
+    icons: icon
+      ? { icon: imageUrl(icon), apple: imageUrl(icon) }
+      : { icon: '/itmart-icon.png', apple: '/itmart-icon.png' },
+  };
 }
 
 export async function generateViewport() {
@@ -43,12 +60,13 @@ export async function generateViewport() {
 
 export default async function RootLayout({ children }) {
   const { locale, t } = await getDictionary();
-  const [categories, trackingSettings, branding, storeInfo, deliveryCities] = await Promise.all([
+  const [categories, trackingSettings, branding, storeInfo, deliveryCities, seo] = await Promise.all([
     getCategories(),
     getTrackingSettings(),
     getBranding(),
     getStoreInfo(),
     getDeliveryCities(),
+    getSeoSettings(),
   ]);
   const themeCss = brandingCss(branding);
   const logoUrl = safeBrandingImage(branding?.logoUrl);
@@ -66,15 +84,19 @@ export default async function RootLayout({ children }) {
         />
         {/* Shop colours chosen in the admin (only #RRGGBB values, see lib/theme.js) */}
         {themeCss && <style id="brand-theme" dangerouslySetInnerHTML={{ __html: themeCss }} />}
+        {/* The shop for Google: name, logo, social pages */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(organizationJsonLd({ seo, logoUrl, store: storeInfo }))} />
       </head>
       <body className="min-h-full flex flex-col overflow-x-clip">
         <StoreInfoProvider value={storeInfo}>
           <CartProvider>
+            <WishlistProvider>
             <Header dict={t} locale={locale} categories={categories} logoUrl={logoUrl} />
             <main className="flex-1">{children}</main>
             <Footer dict={t} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} store={storeInfo} deliveryCities={deliveryCities} />
             {/* WhatsApp chat button (the email button is kept in components/ if needed later) */}
             <FloatingWhatsAppButton label={t.footer.chatWhatsapp} locale={locale} />
+            </WishlistProvider>
           </CartProvider>
         </StoreInfoProvider>
         {/* Facebook Pixel / Google tag / Clarity — IDs entered in the admin (Suivi & publicité) */}

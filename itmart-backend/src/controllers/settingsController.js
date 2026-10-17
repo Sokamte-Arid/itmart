@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 const { readBranding, saveBranding, HEX, isLight } = require('../utils/branding');
+const { cleanSeo } = require('../utils/seo');
 const { readStore, readStoreRaw, saveStore, validateStore, publicStore, envDefaults } = require('../utils/storeSettings');
 
 // ---------------------------------------------------------------------------
@@ -245,7 +246,68 @@ const updateStoreSettings = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { saved, defaults: envDefaults() } });
 });
 
+// ---------------------------------------------------------------------------
+// Référencement (SEO) of the whole site: shop name in titles, home page
+// title / description shown by Google, Google Search Console verification.
+// (admin → Paramètres → Référencement). Products and categories have their
+// own SEO fields on their edit forms.
+// ---------------------------------------------------------------------------
+
+const SEO_KEY = 'seo';
+const DEFAULT_SEO = { siteName: 'IT Mart', homeTitle: '', homeDescription: '', googleVerification: '' };
+const GOOGLE_VERIFICATION = /^[A-Za-z0-9_-]{10,100}$/;
+
+async function readSeo() {
+  const row = await prisma.setting.findUnique({ where: { key: SEO_KEY } });
+  if (!row) return { ...DEFAULT_SEO };
+  try {
+    const saved = JSON.parse(row.value);
+    return {
+      siteName: cleanSeo(saved.siteName, 'keyword') || DEFAULT_SEO.siteName,
+      homeTitle: cleanSeo(saved.homeTitle, 'title') || '',
+      homeDescription: cleanSeo(saved.homeDescription, 'description') || '',
+      googleVerification: GOOGLE_VERIFICATION.test(saved.googleVerification || '') ? saved.googleVerification : '',
+    };
+  } catch {
+    return { ...DEFAULT_SEO };
+  }
+}
+
+// GET /api/settings/seo  (public — the storefront reads it for page titles)
+const getSeoSettings = asyncHandler(async (req, res) => {
+  res.set('Cache-Control', 'public, max-age=60');
+  res.json({ success: true, data: await readSeo() });
+});
+
+// PUT /api/settings/seo  (super admin)
+const updateSeoSettings = asyncHandler(async (req, res) => {
+  const lang = req.body.lang === 'en' ? 'en' : 'fr';
+  // People often paste the whole <meta name="google-site-verification" content="…"> tag
+  let verification = String(req.body.googleVerification || '').trim();
+  const fromTag = verification.match(/content\s*=\s*["']([^"']+)["']/i);
+  if (fromTag) verification = fromTag[1].trim();
+  if (verification && !GOOGLE_VERIFICATION.test(verification)) {
+    throw new ApiError(
+      400,
+      lang === 'en'
+        ? 'The Google verification code looks wrong: paste the code given by Search Console (letters, digits, - and _).'
+        : 'Le code de vérification Google semble incorrect : collez le code donné par Search Console (lettres, chiffres, - et _).'
+    );
+  }
+  const next = {
+    siteName: cleanSeo(req.body.siteName, 'keyword') || DEFAULT_SEO.siteName,
+    homeTitle: cleanSeo(req.body.homeTitle, 'title') || '',
+    homeDescription: cleanSeo(req.body.homeDescription, 'description') || '',
+    googleVerification: verification,
+  };
+  const value = JSON.stringify(next);
+  await prisma.setting.upsert({ where: { key: SEO_KEY }, create: { key: SEO_KEY, value }, update: { value } });
+  res.json({ success: true, data: next });
+});
+
 module.exports = {
+  getSeoSettings,
+  updateSeoSettings,
   getStoreSettings,
   getStoreSettingsAdmin,
   updateStoreSettings,

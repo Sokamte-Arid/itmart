@@ -78,6 +78,7 @@ export default function ProductVariantSwitcher({ product, description, dict, loc
   const variantImage = colorImageId ? product.images?.find((i) => i.id === colorImageId) : null;
   const cartProduct = {
     id: selected.id,
+    slug: selected.slug,
     variantId: chosenVariant?.id || null,
     variantLabel: variantLabel(chosenVariant),
     nameEn: selected.nameEn,

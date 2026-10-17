@@ -6,6 +6,10 @@ const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { sendPasswordResetEmail } = require('../utils/mailer');
 
+// Only a fingerprint of the reset link is stored, so a database copy can't be
+// used to reset anyone's password.
+const hashResetToken = (token) => crypto.createHash('sha256').update(String(token)).digest('hex');
+
 const signToken = (admin) =>
   jwt.sign({ id: admin.id, role: admin.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
@@ -124,7 +128,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     await prisma.admin.update({
       where: { id: admin.id },
-      data: { resetToken, resetTokenExpiry },
+      data: { resetToken: hashResetToken(resetToken), resetTokenExpiry },
     });
 
     const adminUrl = process.env.ADMIN_URL || 'http://localhost:5174';
@@ -149,7 +153,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   }
 
   const admin = await prisma.admin.findFirst({
-    where: { resetToken: token, resetTokenExpiry: { gt: new Date() } },
+    where: { resetToken: hashResetToken(token), resetTokenExpiry: { gt: new Date() } },
   });
   if (!admin) {
     throw new ApiError(400, 'This reset link is invalid or has expired. Please request a new one.');

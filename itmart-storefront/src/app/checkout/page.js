@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { submitOrder, getDeliveryZones } from '@/lib/clientApi';
+import { submitOrder, getDeliveryZones, saveAbandonedCart } from '@/lib/clientApi';
+import { getCartToken, resetCartToken } from '@/lib/cartToken';
 import { formatFCFA } from '@/lib/utils';
 import { useLocale } from '@/hooks/useLocale';
 
@@ -36,6 +37,32 @@ export default function CheckoutPage() {
     checkoutTracked.current = true;
     trackBeginCheckout(cart.items, cart.subtotal);
   }, [cart?.hydrated, cart?.items, cart?.subtotal]);
+
+  // Abandoned cart: once a usable phone number is typed, the cart is saved
+  // (a moment after the customer stops typing) so the shop can help if the
+  // order isn't confirmed. Sent again when details or the cart change.
+  const lastSaved = useRef('');
+  const phoneDigits = form.phone.replace(/\D/g, '');
+  useEffect(() => {
+    if (!cart?.hydrated || cart.items.length === 0 || submitting) return;
+    if (phoneDigits.length < 9 || phoneDigits.length > 15) return;
+    const payload = {
+      token: getCartToken(),
+      customerName: form.customerName,
+      phone: form.phone,
+      email: form.email,
+      deliveryZoneId: form.deliveryZoneId || undefined,
+      lang: locale,
+      items: cart.items.map((i) => ({ productId: i.id, variantId: i.variantId || undefined, quantity: i.quantity })),
+    };
+    const signature = JSON.stringify(payload);
+    if (signature === lastSaved.current) return;
+    const id = setTimeout(() => {
+      lastSaved.current = signature;
+      saveAbandonedCart(payload);
+    }, 1500);
+    return () => clearTimeout(id);
+  }, [cart?.hydrated, cart?.items, form.customerName, form.phone, form.email, form.deliveryZoneId, phoneDigits, locale, submitting]);
 
   useEffect(() => {
     if (cart?.hydrated && cart.items.length === 0 && !submitting) {
@@ -72,6 +99,7 @@ export default function CheckoutPage() {
       const payload = {
         ...form,
         lang: locale,
+        cartToken: getCartToken(),
         items: cart.items.map((i) => ({ productId: i.id, variantId: i.variantId || undefined, quantity: i.quantity })),
       };
       const res = await submitOrder(payload);
@@ -90,6 +118,7 @@ export default function CheckoutPage() {
         cartItems: cart.items,
       });
       cart.clearCart();
+      resetCartToken(); // the next cart is a new one
       router.push('/order-confirmation');
     } catch (err) {
       if (err.status === 409 && err.details) {
@@ -237,6 +266,7 @@ export default function CheckoutPage() {
             {submitting ? t.common.loading : t.checkout.confirmButton}
           </button>
           <p className="text-xs text-ink-500 text-center">{t.checkout.confirmHint}</p>
+          <p className="text-[11px] text-ink-400 text-center">{t.checkout.cartSavedNote}</p>
         </form>
 
         <div className="bg-white rounded-xl border border-surface-border p-5 h-fit">

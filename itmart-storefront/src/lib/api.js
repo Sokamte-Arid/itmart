@@ -125,3 +125,9 @@ export function imageUrl(path) {
   if (path.startsWith('http')) return path;
   return `${API_ORIGIN}${path}`;
 }
+
+// Référencement of the whole site (admin → Paramètres → Référencement) — null if unreachable
+export async function getSeoSettings() {
+  const res = await apiFetch('/settings/seo', { revalidate: 60 });
+  return res?.data || null;
+}
